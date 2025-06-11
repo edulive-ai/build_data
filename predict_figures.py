@@ -5,11 +5,12 @@ import json
 
 # Load the pre-trained model
 filepath = hf_hub_download(repo_id="juliozhao/DocLayout-YOLO-DocStructBench", filename="doclayout_yolo_docstructbench_imgsz1024.pt")
+# filepath = hf_hub_download(repo_id="juliozhao/DocLayout-YOLO-D4LA-from_scratch", filename="doclayout_yolo_d4la_imgsz1600_from_scratch.pt")
 model = YOLOv10(filepath)
 
 # Perform prediction
 det_res = model.predict(
-    "/home/batien/Desktop/build_data/images/toandutuy_page_110.png",   # Image to predict
+    "/home/batien/Desktop/build_data/huongdan/Hướng dẫn học toán lớp 1 q3_page_006.png",   # Image to predict
     imgsz=1024,        # Prediction image size
     conf=0.2,          # Confidence threshold
     device="cuda"    # Device to use (e.g., 'cuda:0' or 'cpu')

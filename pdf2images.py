@@ -104,7 +104,7 @@ def main():
     print(f"\n📄 Đang convert: {pdf_file}")
     
     # Tạo thư mục con cho ảnh
-    output_dir = f"images"
+    output_dir = f"huongdan"
     
     # Convert PDF
     pdf_to_png_high_quality(pdf_file, output_dir)

@@ -1,5 +1,0 @@
-PyMuPDF
-huggingface_hub
-doclayout-yolo
-vietocr
-Pillow<10.0
