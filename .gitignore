@@ -1,2 +1,7 @@
 .env
 **/images/
+output/
+ccst/
+cropped/
+ccst.pdf
+toan1_tuduy_1001.pdf

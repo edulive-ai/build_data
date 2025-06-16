@@ -10,7 +10,7 @@ model = YOLOv10(filepath)
 
 # Perform prediction
 det_res = model.predict(
-    "/home/batien/Desktop/build_data/huongdan/Hướng dẫn học toán lớp 1 q3_page_006.png",   # Image to predict
+    "/home/batien/Desktop/build_data/ccst/ccst_page_031.png",   # Image to predict
     imgsz=1024,        # Prediction image size
     conf=0.2,          # Confidence threshold
     device="cuda"    # Device to use (e.g., 'cuda:0' or 'cpu')

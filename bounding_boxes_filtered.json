@@ -1,0 +1,164 @@
+{
+  "config": {
+    "min_area": 130000,
+    "min_y": 95,
+    "max_y": 7950,
+    "scale_x": 3.1253333333333333,
+    "scale_y": 3.125
+  },
+  "statistics": {
+    "total_boxes": 9,
+    "valid_boxes": 8,
+    "filtered_boxes": 1,
+    "retention_rate": 88.88888888888889
+  },
+  "valid_bboxes": [
+    {
+      "original_index": 0,
+      "class_id": 3,
+      "confidence": 0.9157341122627258,
+      "bbox": [
+        807,
+        7298,
+        5160,
+        8034
+      ],
+      "width": 4353,
+      "height": 736,
+      "area": 3203808,
+      "new_index": 0,
+      "output_path": "crop_images1/crop_0_cls3.png"
+    },
+    {
+      "original_index": 1,
+      "class_id": 1,
+      "confidence": 0.7747582197189331,
+      "bbox": [
+        501,
+        6766,
+        3870,
+        7010
+      ],
+      "width": 3369,
+      "height": 244,
+      "area": 822036,
+      "new_index": 1,
+      "output_path": "crop_images1/crop_1_cls1.png"
+    },
+    {
+      "original_index": 2,
+      "class_id": 8,
+      "confidence": 0.7103058099746704,
+      "bbox": [
+        1392,
+        6256,
+        4502,
+        6464
+      ],
+      "width": 3110,
+      "height": 208,
+      "area": 646880,
+      "new_index": 2,
+      "output_path": "crop_images1/crop_2_cls8.png"
+    },
+    {
+      "original_index": 3,
+      "class_id": 0,
+      "confidence": 0.6874411106109619,
+      "bbox": [
+        2239,
+        1235,
+        3786,
+        1535
+      ],
+      "width": 1547,
+      "height": 300,
+      "area": 464100,
+      "new_index": 3,
+      "output_path": "crop_images1/crop_3_cls0.png"
+    },
+    {
+      "original_index": 4,
+      "class_id": 3,
+      "confidence": 0.6558564305305481,
+      "bbox": [
+        1189,
+        4051,
+        4674,
+        5550
+      ],
+      "width": 3485,
+      "height": 1499,
+      "area": 5224015,
+      "new_index": 4,
+      "output_path": "crop_images1/crop_4_cls3.png"
+    },
+    {
+      "original_index": 5,
+      "class_id": 1,
+      "confidence": 0.6504117846488953,
+      "bbox": [
+        553,
+        5799,
+        1824,
+        6025
+      ],
+      "width": 1271,
+      "height": 226,
+      "area": 287246,
+      "new_index": 5,
+      "output_path": "crop_images1/crop_5_cls1.png"
+    },
+    {
+      "original_index": 6,
+      "class_id": 3,
+      "confidence": 0.6386150121688843,
+      "bbox": [
+        1195,
+        1793,
+        4675,
+        3280
+      ],
+      "width": 3480,
+      "height": 1487,
+      "area": 5174760,
+      "new_index": 6,
+      "output_path": "crop_images1/crop_6_cls3.png"
+    },
+    {
+      "original_index": 8,
+      "class_id": 1,
+      "confidence": 0.562074601650238,
+      "bbox": [
+        557,
+        843,
+        1766,
+        1084
+      ],
+      "width": 1209,
+      "height": 241,
+      "area": 291369,
+      "new_index": 7,
+      "output_path": "crop_images1/crop_7_cls1.png"
+    }
+  ],
+  "filtered_bboxes": [
+    {
+      "original_index": 7,
+      "class_id": 2,
+      "confidence": 0.5854182243347168,
+      "bbox": [
+        4,
+        2,
+        737,
+        531
+      ],
+      "width": 733,
+      "height": 529,
+      "area": 387757,
+      "reject_reasons": [
+        "y1 quá nhỏ (2 < 95)"
+      ]
+    }
+  ]
+}

@@ -14,17 +14,18 @@ class YOLOBatchProcessor:
         self.output_dir = Path(output_dir)
         
         # Tạo cấu trúc thư mục đầu ra
-        self.validated_dir = self.output_dir / "validated"
+        self.all_detections_dir = self.output_dir / "all_detections"
+        self.valid_detections_dir = self.output_dir / "valid_detections"
         self.cropped_dir = self.output_dir / "cropped"
         
-        self.validated_dir.mkdir(parents=True, exist_ok=True)
+        self.all_detections_dir.mkdir(parents=True, exist_ok=True)
+        self.valid_detections_dir.mkdir(parents=True, exist_ok=True)
         self.cropped_dir.mkdir(parents=True, exist_ok=True)
         
-        # === Tham số lọc ===
-        self.REFERENCE_BBOX = [2700, 4968, 3270, 5173]
-        self.MIN_AREA = (self.REFERENCE_BBOX[2] - self.REFERENCE_BBOX[0]) * (self.REFERENCE_BBOX[3] - self.REFERENCE_BBOX[1])
-        self.MIN_Y = 80
-        self.MAX_Y = 7225
+        # === Tham số lọc (giống hệt code đơn) ===
+        self.MIN_AREA = 130000
+        self.MIN_Y = 95
+        self.MAX_Y = 7950
         
         # Định dạng file được hỗ trợ
         self.SUPPORTED_FORMATS = {'.png', '.jpg', '.jpeg', '.pdf', '.tiff', '.tif', '.bmp'}
@@ -35,14 +36,15 @@ class YOLOBatchProcessor:
         self.failed_images = 0
         self.total_bboxes = 0
         self.total_valid_bboxes = 0
-        self.processing_log = []
         
         print(f"🔧 Cấu hình xử lý:")
         print(f"   - Thư mục đầu vào: {self.input_dir}")
         print(f"   - Thư mục đầu ra: {self.output_dir}")
+        print(f"   - Thư mục tất cả detections: {self.all_detections_dir}")
+        print(f"   - Thư mục valid detections: {self.valid_detections_dir}")
+        print(f"   - Thư mục cropped: {self.cropped_dir}")
         print(f"   - Diện tích tối thiểu: {self.MIN_AREA:,} pixels")
         print(f"   - Vùng Y hợp lệ: {self.MIN_Y} <= y <= {self.MAX_Y}")
-        print(f"   - Bbox tham chiếu: {self.REFERENCE_BBOX}")
         
     def load_model(self):
         """Load YOLO model"""
@@ -67,8 +69,45 @@ class YOLOBatchProcessor:
                 image_files.append(file_path)
         return sorted(image_files)
     
+    def load_image_with_fitz(self, image_path):
+        """
+        Load ảnh bằng fitz (giống hệt code đơn) để đảm bảo chất lượng cao
+        """
+        try:
+            # === Dùng fitz để đọc ảnh chất lượng cao (giống code đơn) ===
+            doc = fitz.open(str(image_path))
+            pix = doc[0].get_pixmap(dpi=300)  # ảnh gốc có thể rất lớn
+            fitz_img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+            if pix.n == 4:  # nếu có alpha
+                fitz_img = cv2.cvtColor(fitz_img, cv2.COLOR_RGBA2RGB)
+            
+            fitz_h, fitz_w = fitz_img.shape[:2]
+            doc.close()
+            
+            # === Dùng OpenCV để lấy kích thước ảnh YOLO resize (giống code đơn) ===
+            yolo_input = cv2.imread(str(image_path))
+            if yolo_input is None:
+                # Fallback: tạo yolo_input từ fitz_img
+                yolo_input = cv2.cvtColor(fitz_img, cv2.COLOR_RGB2BGR)
+            
+            yolo_h, yolo_w = yolo_input.shape[:2]
+            
+            return {
+                "fitz_img": fitz_img,
+                "yolo_input": yolo_input,
+                "fitz_size": (fitz_w, fitz_h),
+                "yolo_size": (yolo_w, yolo_h),
+                "success": True
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
     def process_single_image(self, image_path, image_index):
-        """Xử lý một ảnh"""
+        """Xử lý một ảnh (logic giống hệt code đơn)"""
         try:
             image_name = f"image_{image_index:04d}"
             print(f"\n📸 Đang xử lý: {image_path.name} -> {image_name}")
@@ -77,42 +116,33 @@ class YOLOBatchProcessor:
             crop_subdir = self.cropped_dir / image_name
             crop_subdir.mkdir(exist_ok=True)
             
-            # === Dự đoán YOLO ===
-            det_res = self.model.predict(str(image_path), imgsz=1024, conf=0.5, device="cuda")
+            # === Load ảnh bằng fitz (giống code đơn) ===
+            image_data = self.load_image_with_fitz(image_path)
+            if not image_data["success"]:
+                raise ValueError(f"Không thể load ảnh: {image_data['error']}")
             
-            if not det_res[0].boxes:
-                print(f"⚠️  Không phát hiện bbox nào trong {image_path.name}")
-                return self._create_empty_result(image_path, image_name)
+            fitz_img = image_data["fitz_img"]
+            yolo_input = image_data["yolo_input"]
+            fitz_w, fitz_h = image_data["fitz_size"]
+            yolo_w, yolo_h = image_data["yolo_size"]
             
-            # === Xử lý ảnh gốc ===
-            if image_path.suffix.lower() == '.pdf':
-                doc = fitz.open(str(image_path))
-                pix = doc[0].get_pixmap(dpi=300)
-                fitz_img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
-                if pix.n == 4:
-                    fitz_img = cv2.cvtColor(fitz_img, cv2.COLOR_RGBA2RGB)
-                doc.close()
-            else:
-                fitz_img = cv2.imread(str(image_path))
-                if fitz_img is None:
-                    raise ValueError(f"Không thể đọc ảnh: {image_path}")
-                fitz_img = cv2.cvtColor(fitz_img, cv2.COLOR_BGR2RGB)
-            
-            fitz_h, fitz_w = fitz_img.shape[:2]
-            
-            # === Ảnh YOLO input để tính scale ===
-            yolo_input = cv2.imread(str(image_path))
-            if yolo_input is None:
-                # Fallback cho PDF
-                yolo_input = cv2.cvtColor(fitz_img, cv2.COLOR_RGB2BGR)
-            
-            yolo_h, yolo_w = yolo_input.shape[:2]
+            # === Tính hệ số scale (giống code đơn) ===
             scale_x = fitz_w / yolo_w
             scale_y = fitz_h / yolo_h
             
-            print(f"   📏 Kích thước: YOLO {yolo_w}x{yolo_h} -> Gốc {fitz_w}x{fitz_h} (scale: {scale_x:.3f}, {scale_y:.3f})")
+            print(f"   📏 Kích thước:")
+            print(f"       - YOLO input: {yolo_w}x{yolo_h}")
+            print(f"       - Ảnh gốc: {fitz_w}x{fitz_h}")
+            print(f"       - Scale: x={scale_x:.3f}, y={scale_y:.3f}")
             
-            # === Xử lý và lọc bbox ===
+            # === Dự đoán YOLO ===
+            det_res = self.model.predict(str(image_path), imgsz=1024, conf=0.2, device="cuda")
+            
+            if not det_res[0].boxes:
+                print(f"⚠️  Không phát hiện bbox nào trong {image_path.name}")
+                return self._create_empty_result(image_path, image_name, fitz_w, fitz_h, yolo_w, yolo_h, scale_x, scale_y)
+            
+            # === Xử lý và lọc bbox (logic giống hệt code đơn) ===
             valid_bboxes = []
             filtered_bboxes = []
             valid_count = 0
@@ -129,15 +159,16 @@ class YOLOBatchProcessor:
                 else:
                     filtered_bboxes.append(bbox_result["bbox_info"])
             
-            # === Tạo ảnh annotated ===
+            # === Tạo ảnh annotated - TÁCH RIÊNG 2 THƯỜNG MỤC ===
+            # 1. Ảnh với tất cả bbox -> all_detections
             annotated_all = det_res[0].plot(pil=True, line_width=5, font_size=20)
-            annotated_all_path = self.validated_dir / f"{image_name}_all_bboxes.jpg"
+            annotated_all_path = self.all_detections_dir / f"{image_name}_all_bboxes.jpg"
             cv2.imwrite(str(annotated_all_path), cv2.cvtColor(np.array(annotated_all), cv2.COLOR_RGB2BGR))
             
-            # Ảnh chỉ có bbox hợp lệ
+            # 2. Ảnh chỉ có bbox hợp lệ -> valid_detections
             if valid_bboxes:
                 valid_annotated = self._create_valid_annotated(yolo_input, valid_bboxes, scale_x, scale_y)
-                valid_annotated_path = self.validated_dir / f"{image_name}_valid_bboxes.jpg"
+                valid_annotated_path = self.valid_detections_dir / f"{image_name}_valid_bboxes.jpg"
                 cv2.imwrite(str(valid_annotated_path), valid_annotated)
             
             # === Thống kê ảnh ===
@@ -159,6 +190,11 @@ class YOLOBatchProcessor:
                 },
                 "valid_bboxes": valid_bboxes,
                 "filtered_bboxes": filtered_bboxes,
+                "paths": {
+                    "all_detections": str(annotated_all_path),
+                    "valid_detections": str(valid_annotated_path) if valid_bboxes else None,
+                    "cropped_folder": str(crop_subdir)
+                },
                 "status": "success"
             }
             
@@ -171,6 +207,7 @@ class YOLOBatchProcessor:
         except Exception as e:
             error_msg = f"Lỗi xử lý {image_path.name}: {str(e)}"
             print(f"   ❌ {error_msg}")
+            self.failed_images += 1
             return {
                 "image_info": {
                     "original_path": str(image_path),
@@ -182,7 +219,7 @@ class YOLOBatchProcessor:
             }
     
     def _process_bbox(self, result, bbox_index, scale_x, scale_y, fitz_img, crop_subdir, valid_count, image_name):
-        """Xử lý một bbox"""
+        """Xử lý một bbox (logic giống hệt code đơn)"""
         x1, y1, x2, y2 = result.xyxy[0].tolist()
         
         # Scale về tọa độ ảnh gốc
@@ -206,14 +243,16 @@ class YOLOBatchProcessor:
             "area": area
         }
         
-        # === Kiểm tra điều kiện lọc ===
+        # === Kiểm tra điều kiện lọc (giống hệt code đơn) ===
         is_valid = True
         reject_reasons = []
         
+        # Kiểm tra diện tích
         if area < self.MIN_AREA:
             is_valid = False
             reject_reasons.append(f"diện tích nhỏ ({area:,} < {self.MIN_AREA:,})")
         
+        # Kiểm tra vị trí Y
         if scaled_y1 < self.MIN_Y:
             is_valid = False
             reject_reasons.append(f"y1 quá nhỏ ({scaled_y1} < {self.MIN_Y})")
@@ -223,25 +262,32 @@ class YOLOBatchProcessor:
             reject_reasons.append(f"y1 quá lớn ({scaled_y1} > {self.MAX_Y})")
         
         if is_valid:
-            # Crop và làm nét ảnh
+            # === Crop, làm nét và lưu bbox hợp lệ (giống hệt code đơn) ===
             cropped = fitz_img[scaled_y1:scaled_y2, scaled_x1:scaled_x2]
             
-            sharpen_kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+            # Làm nét ảnh bằng kernel sharpen
+            sharpen_kernel = np.array([[0, -1, 0],
+                                       [-1, 5, -1],
+                                       [0, -1, 0]])
             sharpened = cv2.filter2D(cropped, -1, sharpen_kernel)
             
             # Lưu với tên file mới
             crop_filename = f"crop_{valid_count:03d}_cls{int(result.cls[0])}.png"
             crop_path = crop_subdir / crop_filename
+            
+            # Chuyển từ RGB sang BGR trước khi lưu (vì cv2.imwrite expect BGR)
             cv2.imwrite(str(crop_path), cv2.cvtColor(sharpened, cv2.COLOR_RGB2BGR))
             
             bbox_info["new_index"] = valid_count
             bbox_info["crop_path"] = str(crop_path)
             bbox_info["crop_filename"] = crop_filename
             
-            print(f"      ✅ Bbox {bbox_index} -> {crop_filename}: [{scaled_x1}, {scaled_y1}, {scaled_x2}, {scaled_y2}] (Area: {area:,})")
+            print(f"      ✅ Bbox {bbox_index} -> crop_{valid_count}: [{scaled_x1}, {scaled_y1}, {scaled_x2}, {scaled_y2}] "
+                  f"(W:{width}, H:{height}, Area:{area:,}) -> {crop_filename}")
         else:
             bbox_info["reject_reasons"] = reject_reasons
-            print(f"      ❌ Bbox {bbox_index} BỊ LOẠI: {', '.join(reject_reasons)}")
+            print(f"      ❌ Bbox {bbox_index} BỊ LOẠI: [{scaled_x1}, {scaled_y1}, {scaled_x2}, {scaled_y2}] "
+                  f"(W:{width}, H:{height}, Area:{area:,}) - Lý do: {', '.join(reject_reasons)}")
         
         return {
             "is_valid": is_valid,
@@ -249,29 +295,33 @@ class YOLOBatchProcessor:
         }
     
     def _create_valid_annotated(self, yolo_img, valid_bboxes, scale_x, scale_y):
-        """Tạo ảnh annotated chỉ với bbox hợp lệ"""
+        """Tạo ảnh annotated chỉ với bbox hợp lệ (giống hệt code đơn)"""
         img_copy = yolo_img.copy()
         
         for bbox_info in valid_bboxes:
-            # Scale ngược về tọa độ YOLO
+            # Scale ngược về tọa độ YOLO để vẽ
             x1 = int(bbox_info["bbox"][0] / scale_x)
             y1 = int(bbox_info["bbox"][1] / scale_y)
             x2 = int(bbox_info["bbox"][2] / scale_x)
             y2 = int(bbox_info["bbox"][3] / scale_y)
             
+            # Vẽ bbox
             cv2.rectangle(img_copy, (x1, y1), (x2, y2), (0, 255, 0), 3)
             cv2.putText(img_copy, f"cls{bbox_info['class_id']}", 
                        (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
         
         return img_copy
     
-    def _create_empty_result(self, image_path, image_name):
+    def _create_empty_result(self, image_path, image_name, fitz_w, fitz_h, yolo_w, yolo_h, scale_x, scale_y):
         """Tạo kết quả rỗng cho ảnh không có bbox"""
         return {
             "image_info": {
                 "original_path": str(image_path),
                 "image_name": image_name,
-                "original_filename": image_path.name
+                "original_filename": image_path.name,
+                "image_size": [fitz_w, fitz_h],
+                "yolo_size": [yolo_w, yolo_h],
+                "scale": [scale_x, scale_y]
             },
             "statistics": {
                 "total_boxes": 0,
@@ -281,6 +331,11 @@ class YOLOBatchProcessor:
             },
             "valid_bboxes": [],
             "filtered_bboxes": [],
+            "paths": {
+                "all_detections": None,
+                "valid_detections": None,
+                "cropped_folder": None
+            },
             "status": "no_detection"
         }
     
@@ -309,8 +364,6 @@ class YOLOBatchProcessor:
             
             if result["status"] == "success":
                 self.processed_images += 1
-            else:
-                self.failed_images += 1
         
         # === Lưu kết quả tổng hợp ===
         self._save_batch_results(all_results)
@@ -321,12 +374,14 @@ class YOLOBatchProcessor:
         return True
     
     def _save_batch_results(self, all_results):
-        """Lưu kết quả tổng hợp"""
+        """Lưu kết quả tổng hợp trong thư mục gốc output"""
         batch_result = {
             "config": {
                 "input_directory": str(self.input_dir),
                 "output_directory": str(self.output_dir),
-                "reference_bbox": self.REFERENCE_BBOX,
+                "all_detections_directory": str(self.all_detections_dir),
+                "valid_detections_directory": str(self.valid_detections_dir),
+                "cropped_directory": str(self.cropped_dir),
                 "min_area": self.MIN_AREA,
                 "min_y": self.MIN_Y,
                 "max_y": self.MAX_Y,
@@ -345,8 +400,8 @@ class YOLOBatchProcessor:
             "results": all_results
         }
         
-        # Lưu JSON tổng hợp
-        batch_json_path = self.validated_dir / "batch_results.json"
+        # Lưu JSON tổng hợp trong thư mục gốc output
+        batch_json_path = self.output_dir / "batch_results.json"
         with open(batch_json_path, "w", encoding='utf-8') as f:
             json.dump(batch_result, f, ensure_ascii=False, indent=2)
         
@@ -368,15 +423,16 @@ class YOLOBatchProcessor:
             print(f"   - Tỷ lệ bbox giữ lại: {self.total_valid_bboxes/self.total_bboxes*100:.1f}%")
         
         print(f"\n📁 Kết quả đầu ra:")
-        print(f"   - Ảnh annotated: {self.validated_dir}")
+        print(f"   - Ảnh tất cả detections: {self.all_detections_dir}")
+        print(f"   - Ảnh valid detections: {self.valid_detections_dir}")
         print(f"   - Ảnh crop: {self.cropped_dir}")
-        print(f"   - JSON tổng hợp: {self.validated_dir}/batch_results.json")
+        print(f"   - JSON tổng hợp: {self.output_dir}/batch_results.json")
 
 
 def main():
     # === Cấu hình đường dẫn ===
-    INPUT_DIR = "/home/batien/Desktop/build_data/images"  # Thay đổi đường dẫn này
-    OUTPUT_DIR = "/home/batien/Desktop/1001_qa_toan1"  # Thay đổi đường dẫn này
+    INPUT_DIR = "/home/batien/Desktop/build_data/toan1_tuduy_1001_images"  # Thay đổi đường dẫn này
+    OUTPUT_DIR = "/home/batien/Desktop/build_data/output"  # Thay đổi đường dẫn này
     
     # Tạo processor và chạy
     processor = YOLOBatchProcessor(INPUT_DIR, OUTPUT_DIR)
