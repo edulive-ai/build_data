@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Câu hỏi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Hệ thống Quản lý Câu hỏi</h1>
+            <p>Thêm, chỉnh sửa và quản lý câu hỏi với hình ảnh</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content-3col">
+            <!-- Form Section -->
+            <div class="form-section">
+                <h2 class="section-title">Thêm Câu hỏi Mới</h2>
+                
+                <form id="questionForm">
+                    <div class="form-group">
+                        <label for="subject">Môn học:</label>
+                        <input type="text" id="subject" name="subject" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="chapter">Chương:</label>
+                        <input type="text" id="chapter" name="chapter" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lesson">Bài học:</label>
+                        <input type="text" id="lesson" name="lesson" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="difficulty">Độ khó:</label>
+                        <select id="difficulty" name="difficulty" required>
+                            <option value="easy">Dễ</option>
+                            <option value="medium">Trung bình</option>
+                            <option value="hard">Khó</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="question">Câu hỏi:</label>
+                        <textarea id="question" name="question" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="answer">Đáp án:</label>
+                        <textarea id="answer" name="answer" required></textarea>
+                    </div>
+
+                    <!-- Folder Selection -->
+                    <div class="form-group">
+                        <label for="folderSelect">Chọn folder ảnh:</label>
+                        <select id="folderSelect" class="folder-select" onchange="loadImagesFromFolder()">
+                            <option value="">-- Chọn folder ảnh --</option>
+                        </select>
+                    </div>
+
+                    <!-- Image Selection Controls -->
+                    <div class="form-group">
+                        <label>Chọn hình ảnh:</label>
+                        <div class="selection-buttons">
+                            <button type="button" id="selectQuestionMode" class="btn btn-success">Chọn ảnh Câu hỏi</button>
+                            <button type="button" id="selectAnswerMode" class="btn btn-warning">Chọn ảnh Đáp án</button>
+                            <button type="button" id="clearSelection" class="btn btn-secondary">Xóa chọn</button>
+                        </div>
+                        
+                        <!-- Images Grid -->
+                        <div id="imagesGrid" class="images-grid">
+                            <p class="no-images">Vui lòng chọn folder để xem ảnh</p>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Thêm Câu hỏi</button>
+                </form>
+            </div>
+
+            <!-- Questions List Section -->
+            <div class="questions-section">
+                <h2 class="section-title">Danh sách Câu hỏi</h2>
+                <div id="questionsList" class="questions-list"></div>
+            </div>
+
+            <!-- JSON Viewer Section -->
+            <div class="json-viewer-section">
+                <div class="json-header">
+                    <h2 class="section-title">JSON Viewer & Editor</h2>
+                    <div class="json-controls">
+                        <button id="loadJsonBtn" class="btn btn-primary">Tải JSON</button>
+                        <button id="saveJsonBtn" class="btn btn-success">Lưu JSON</button>
+                        <button id="formatJsonBtn" class="btn btn-secondary">Format JSON</button>
+                        <button id="validateJsonBtn" class="btn btn-warning">Kiểm tra JSON</button>
+                    </div>
+                </div>
+                <div class="json-stats">
+                    <span id="jsonStats" class="json-stats-text">Chưa tải dữ liệu</span>
+                </div>
+                <div class="json-editor-container">
+                    <textarea id="jsonEditor" class="json-editor" placeholder="Loading JSON..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Chỉnh sửa Câu hỏi</h2>
+            
+            <form id="editForm">
+                <div class="form-group">
+                    <label for="editSubject">Môn học:</label>
+                    <input type="text" id="editSubject" name="subject" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editChapter">Chương:</label>
+                    <input type="text" id="editChapter" name="chapter" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editLesson">Bài học:</label>
+                    <input type="text" id="editLesson" name="lesson" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editDifficulty">Độ khó:</label>
+                    <select id="editDifficulty" name="difficulty" required>
+                        <option value="easy">Dễ</option>
+                        <option value="medium">Trung bình</option>
+                        <option value="hard">Khó</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="editQuestion">Câu hỏi:</label>
+                    <textarea id="editQuestion" name="question" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="editAnswer">Đáp án:</label>
+                    <textarea id="editAnswer" name="answer" required></textarea>
+                </div>
+
+                <!-- Edit Folder Selection -->
+                <div class="form-group">
+                    <label for="editFolderSelect">Chọn folder ảnh:</label>
+                    <select id="editFolderSelect" class="folder-select" onchange="loadImagesFromFolderForEdit(this.value)">
+                        <option value="">-- Chọn folder ảnh --</option>
+                    </select>
+                </div>
+
+                <!-- Edit Image Selection Controls -->
+                <div class="form-group">
+                    <label>Chọn hình ảnh:</label>
+                    <div class="selection-buttons">
+                        <button type="button" id="editSelectQuestionMode" class="btn btn-success">Chọn ảnh Câu hỏi</button>
+                        <button type="button" id="editSelectAnswerMode" class="btn btn-warning">Chọn ảnh Đáp án</button>
+                        <button type="button" id="editClearSelection" class="btn btn-secondary">Xóa chọn</button>
+                    </div>
+                    
+                    <!-- Edit Images Grid -->
+                    <div id="editImagesGrid" class="images-grid">
+                        <p class="no-images">Vui lòng chọn folder để xem ảnh</p>
+                    </div>
+                </div>
+
+                <div class="selection-buttons">
+                    <button type="submit" class="btn btn-primary">Cập nhật</button>
+                    <button type="button" id="cancelEdit" class="btn btn-secondary">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

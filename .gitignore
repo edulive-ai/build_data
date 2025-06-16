@@ -1,6 +1,5 @@
 .env
 **/images/
-output/
 ccst/
 cropped/
 ccst.pdf
