@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery - Xem Ảnh Detection và Crop</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='gallery.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🖼️ Gallery - Xem Ảnh Detection và Crop</h1>
+            <div class="nav-tabs">
+                <a href="/" class="tab-btn">🏠 Trang chính</a>
+                <button class="tab-btn active">🖼️ Gallery</button>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="gallery-controls">
+            <div class="control-group">
+                <label for="bookSelect">Chọn sách:</label>
+                <select id="bookSelect" onchange="onBookChange()">
+                    <option value="">-- Chọn sách --</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="viewMode">Chế độ xem:</label>
+                <select id="viewMode" onchange="onViewModeChange()">
+                    <option value="detection">🎯 Detection Images</option>
+                    <option value="cropped">✂️ Cropped Images</option>
+                    <option value="both">📋 Cả hai</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="sortBy">Sắp xếp:</label>
+                <select id="sortBy" onchange="onSortChange()">
+                    <option value="name">📝 Tên file</option>
+                    <option value="date">📅 Ngày tạo</option>
+                    <option value="size">📏 Kích thước</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <button id="refreshBtn" class="btn btn-primary" onclick="loadGallery()">
+                    🔄 Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm theo tên file..." onkeyup="filterImages()">
+            <div class="search-stats">
+                <span id="imageStats">Chưa có dữ liệu</span>
+            </div>
+        </div>
+
+        <!-- Gallery Content -->
+        <div class="gallery-content">
+            <!-- Detection Images Section -->
+            <div id="detectionSection" class="gallery-section">
+                <h2 class="section-title">
+                    🎯 Detection Images
+                    <span class="section-count" id="detectionCount">0</span>
+                </h2>
+                <div id="detectionGrid" class="image-grid">
+                    <div class="no-images">Chưa có ảnh detection</div>
+                </div>
+            </div>
+
+            <!-- Cropped Images Section -->
+            <div id="croppedSection" class="gallery-section">
+                <h2 class="section-title">
+                    ✂️ Cropped Images
+                    <span class="section-count" id="croppedCount">0</span>
+                </h2>
+                
+                <!-- Folder Tabs -->
+                <div id="folderTabs" class="folder-tabs">
+                    <!-- Tabs will be generated here -->
+                </div>
+                
+                <!-- Cropped Images Grid -->
+                <div id="croppedGrid" class="image-grid cropped-grid">
+                    <div class="no-images">Chưa có ảnh crop</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Đang tải ảnh...</div>
+        </div>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content image-modal-content">
+            <span class="close">&times;</span>
+            <div class="image-modal-header">
+                <h3 id="modalImageTitle">Preview Image</h3>
+                <div class="modal-actions">
+                    <button id="prevImageBtn" class="btn btn-secondary">← Trước</button>
+                    <button id="nextImageBtn" class="btn btn-secondary">Sau →</button>
+                    <button id="downloadImageBtn" class="btn btn-primary">💾 Tải về</button>
+                </div>
+            </div>
+            <div class="image-modal-body">
+                <img id="modalImage" src="" alt="Preview">
+                <div class="image-info-panel">
+                    <div class="info-group">
+                        <label>📁 Đường dẫn:</label>
+                        <span id="modalImagePath"></span>
+                    </div>
+                    <div class="info-group">
+                        <label>📏 Kích thước:</label>
+                        <span id="modalImageSize"></span>
+                    </div>
+                    <div class="info-group">
+                        <label>🏷️ Loại:</label>
+                        <span id="modalImageType"></span>
+                    </div>
+                    <div class="info-group" id="modalCropInfo" style="display: none;">
+                        <label>🔍 Class:</label>
+                        <span id="modalImageClass"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox for fullscreen view -->
+    <div id="lightbox" class="lightbox" style="display: none;">
+        <div class="lightbox-content">
+            <span class="lightbox-close">&times;</span>
+            <img id="lightboxImage" src="" alt="Fullscreen">
+            <div class="lightbox-nav">
+                <button id="lightboxPrev" class="lightbox-btn">‹</button>
+                <button id="lightboxNext" class="lightbox-btn">›</button>
+            </div>
+            <div class="lightbox-info">
+                <span id="lightboxTitle"></span>
+                <span id="lightboxCounter"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer"></div>
+
+    <script src="{{ url_for('static', filename='gallery.js') }}"></script>
+</body>
+</html>

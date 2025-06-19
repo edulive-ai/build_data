@@ -4,7 +4,9 @@ let selectedQuestionImages = [];
 let selectedAnswerImages = [];
 let currentSelectionMode = 'question'; // 'question' or 'answer'
 let editingQuestion = null;
-let currentBook = 'books_cropped/cropped'; // Default book
+let currentBook = 'cropped'; // Default book
+let processingStatusId = null;
+let processingInterval = null;
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
@@ -13,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadQuestions();
     setupEventListeners();
     setupJsonViewer();
+    setupPDFUpload();
     loadJsonContent(); // Auto-load JSON on startup
 });
 
@@ -39,12 +42,16 @@ function setupEventListeners() {
     window.addEventListener('click', function(event) {
         const editModal = document.getElementById('editModal');
         const imageModal = document.getElementById('imagePreviewModal');
+        const uploadModal = document.getElementById('uploadModal');
         
         if (event.target === editModal) {
             closeEditModal();
         }
         if (event.target === imageModal) {
             closeImagePreview();
+        }
+        if (event.target === uploadModal) {
+            closeUploadModal();
         }
     });
 
@@ -55,6 +62,296 @@ function setupEventListeners() {
     }
 }
 
+// === PDF UPLOAD FUNCTIONS ===
+function setupPDFUpload() {
+    // Upload button click
+    document.getElementById('uploadPDFBtn').addEventListener('click', showUploadModal);
+    
+    // Upload form submission
+    document.getElementById('uploadForm').addEventListener('submit', handlePDFUpload);
+    
+    // File input change
+    document.getElementById('pdfFile').addEventListener('change', handleFileSelect);
+    
+    // Upload modal close
+    document.getElementById('uploadModal').querySelector('.close').addEventListener('click', closeUploadModal);
+    document.getElementById('cancelUpload').addEventListener('click', closeUploadModal);
+}
+
+function showUploadModal() {
+    const modal = document.getElementById('uploadModal');
+    modal.style.display = 'block';
+    
+    // Reset form
+    document.getElementById('uploadForm').reset();
+    document.getElementById('fileInfo').style.display = 'none';
+    document.getElementById('uploadProgress').style.display = 'none';
+}
+
+function closeUploadModal() {
+    const modal = document.getElementById('uploadModal');
+    modal.style.display = 'none';
+    
+    // Stop processing status check if running
+    if (processingInterval) {
+        clearInterval(processingInterval);
+        processingInterval = null;
+    }
+}
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    const fileInfo = document.getElementById('fileInfo');
+    
+    if (file) {
+        // Validate file type
+        if (!file.type.includes('pdf')) {
+            showAlert('Vui lòng chọn file PDF', 'error');
+            event.target.value = '';
+            fileInfo.style.display = 'none';
+            return;
+        }
+        
+        // Validate file size (100MB)
+        const maxSize = 100 * 1024 * 1024;
+        if (file.size > maxSize) {
+            showAlert(`File quá lớn (tối đa 100MB). File hiện tại: ${(file.size / 1024 / 1024).toFixed(1)}MB`, 'error');
+            event.target.value = '';
+            fileInfo.style.display = 'none';
+            return;
+        }
+        
+        // Show file info
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = `${(file.size / 1024 / 1024).toFixed(1)} MB`;
+        fileInfo.style.display = 'block';
+    } else {
+        fileInfo.style.display = 'none';
+    }
+}
+
+function handlePDFUpload(event) {
+    event.preventDefault();
+    
+    const formData = new FormData();
+    const pdfFile = document.getElementById('pdfFile').files[0];
+    const bookName = document.getElementById('bookName').value.trim();
+    
+    // Validation
+    if (!pdfFile) {
+        showAlert('Vui lòng chọn file PDF', 'error');
+        return;
+    }
+    
+    if (!bookName) {
+        showAlert('Vui lòng nhập tên sách', 'error');
+        return;
+    }
+    
+    // Validate book name format
+    if (!/^[a-zA-Z0-9_-]+$/.test(bookName)) {
+        showAlert('Tên sách chỉ được chứa chữ cái, số, dấu gạch dưới và gạch ngang', 'error');
+        return;
+    }
+    
+    // Prepare form data
+    formData.append('pdf_file', pdfFile);
+    formData.append('book_name', bookName);
+    formData.append('processing_mode', 'complete');
+    
+    // Show progress
+    const progressDiv = document.getElementById('uploadProgress');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const uploadBtn = document.getElementById('submitUpload');
+    
+    progressDiv.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressText.textContent = 'Đang upload file...';
+    uploadBtn.disabled = true;
+    
+    // Upload file
+    fetch('/upload_pdf', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            processingStatusId = data.status_id;
+            progressText.textContent = 'Upload thành công! Bắt đầu xử lý...';
+            
+            // Start monitoring processing status
+            startProcessingMonitor();
+            
+            showAlert('Upload thành công! Đang xử lý PDF...', 'success');
+        } else {
+            throw new Error(data.error || 'Lỗi upload file');
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        showAlert('Lỗi upload: ' + error.message, 'error');
+        
+        // Reset UI
+        progressDiv.style.display = 'none';
+        uploadBtn.disabled = false;
+    });
+}
+
+function startProcessingMonitor() {
+    if (!processingStatusId) return;
+    
+    processingInterval = setInterval(() => {
+        checkProcessingStatus();
+    }, 2000); // Check every 2 seconds
+}
+
+function checkProcessingStatus() {
+    if (!processingStatusId) return;
+    
+    fetch(`/processing_status/${processingStatusId}`)
+        .then(response => response.json())
+        .then(status => {
+            updateProcessingProgress(status);
+            
+            if (status.status === 'completed') {
+                handleProcessingComplete(status);
+            } else if (status.status === 'error') {
+                handleProcessingError(status);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking status:', error);
+        });
+}
+
+function updateProcessingProgress(status) {
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    
+    const progress = status.progress || 0;
+    const message = status.message || 'Đang xử lý...';
+    
+    progressBar.style.width = `${progress}%`;
+    progressText.textContent = `${message} (${progress}%)`;
+    
+    // Add stage-specific information
+    if (status.stage) {
+        let stageText = '';
+        switch (status.stage) {
+            case 'pdf_convert':
+                stageText = 'Chuyển đổi PDF thành ảnh';
+                if (status.current_page && status.total_pages) {
+                    stageText += ` (${status.current_page}/${status.total_pages})`;
+                }
+                break;
+            case 'yolo_detect':
+                stageText = 'YOLO Detection';
+                if (status.current_image && status.total_images) {
+                    stageText += ` (${status.current_image}/${status.total_images})`;
+                }
+                break;
+            case 'ocr':
+                stageText = 'OCR Text Recognition';
+                if (status.current_folder) {
+                    stageText += ` (Folder ${status.current_folder})`;
+                }
+                break;
+            default:
+                stageText = status.stage;
+        }
+        
+        progressText.textContent = `${stageText}: ${message}`;
+    }
+}
+
+function handleProcessingComplete(status) {
+    // Stop monitoring
+    if (processingInterval) {
+        clearInterval(processingInterval);
+        processingInterval = null;
+    }
+    
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const uploadBtn = document.getElementById('submitUpload');
+    
+    progressBar.style.width = '100%';
+    progressText.textContent = 'Hoàn thành xử lý PDF!';
+    uploadBtn.disabled = false;
+    
+    showAlert(`Hoàn thành xử lý PDF cho sách: ${status.book_name}`, 'success');
+    
+    // Refresh books list and questions
+    setTimeout(() => {
+        loadBooks();
+        if (status.book_name) {
+            // Switch to the new book
+            const bookSelect = document.getElementById('bookSelect');
+            const newBookPath = `books_cropped/${status.book_name}`;
+            
+            // Add option if not exists
+            let optionExists = false;
+            for (let option of bookSelect.options) {
+                if (option.value === newBookPath) {
+                    optionExists = true;
+                    break;
+                }
+            }
+            
+            if (!optionExists) {
+                const option = document.createElement('option');
+                option.value = newBookPath;
+                option.textContent = status.book_name;
+                bookSelect.appendChild(option);
+            }
+            
+            // Switch to new book
+            bookSelect.value = newBookPath;
+            onBookChange();
+        }
+        
+        // Auto close modal after 3 seconds
+        setTimeout(() => {
+            closeUploadModal();
+        }, 3000);
+    }, 1000);
+    
+    // Cleanup status
+    setTimeout(() => {
+        if (processingStatusId) {
+            fetch(`/cleanup_status/${processingStatusId}`, { method: 'DELETE' });
+            processingStatusId = null;
+        }
+    }, 10000);
+}
+
+function handleProcessingError(status) {
+    // Stop monitoring
+    if (processingInterval) {
+        clearInterval(processingInterval);
+        processingInterval = null;
+    }
+    
+    const progressText = document.getElementById('progressText');
+    const uploadBtn = document.getElementById('submitUpload');
+    
+    progressText.textContent = `Lỗi: ${status.message}`;
+    uploadBtn.disabled = false;
+    
+    showAlert(`Lỗi xử lý PDF: ${status.message}`, 'error');
+    
+    // Cleanup status
+    setTimeout(() => {
+        if (processingStatusId) {
+            fetch(`/cleanup_status/${processingStatusId}`, { method: 'DELETE' });
+            processingStatusId = null;
+        }
+    }, 5000);
+}
+
+// === EXISTING FUNCTIONS ===
 function loadBooks() {
     console.log('Loading books...');
     fetch('/api/books')
@@ -556,8 +853,6 @@ function showAlert(message, type) {
         alertDiv.remove();
     }, 3000);
 }
-
-// Remove unused tab management functions
 
 // JSON Viewer Functions
 function setupJsonViewer() {

@@ -11,6 +11,10 @@
         <!-- Header -->
         <div class="header">
             <h1>Công Cụ Xử Lý Data PDF</h1>
+            <div class="nav-tabs">
+                <button id="uploadPDFBtn" class="tab-btn">📤 Upload PDF</button>
+                <a href="/gallery" class="tab-btn">🖼️ Gallery</a>
+            </div>
         </div>
 
         <!-- Main Content -->
@@ -98,7 +102,7 @@
             <!-- JSON Viewer Section -->
             <div class="json-viewer-section">
                 <div class="json-header">
-                    <h2 class="section-title">Json Edit</h2>
+                    <h2 class="section-title">Json Editor</h2>
                     <div class="json-controls">
                         <button id="loadJsonBtn" class="btn btn-primary">Tải JSON</button>
                         <button id="saveJsonBtn" class="btn btn-success">Lưu JSON</button>
@@ -106,7 +110,64 @@
                         <button id="validateJsonBtn" class="btn btn-warning">Kiểm tra JSON</button>
                     </div>
                 </div>
+                
+                <div class="json-stats">
+                    <div id="jsonStats" class="json-stats-text">Chưa có dữ liệu JSON</div>
+                </div>
+                
+                <div class="json-editor-container">
+                    <textarea id="jsonEditor" class="json-editor" placeholder="Nội dung JSON sẽ hiển thị ở đây..."></textarea>
+                </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Upload PDF Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>📤 Upload và Xử lý PDF</h2>
+            
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="pdfFile">Chọn file PDF:</label>
+                    <input type="file" id="pdfFile" name="pdf_file" accept=".pdf" required>
+                    
+                    <div id="fileInfo" class="file-info" style="display: none;">
+                        <p><strong>Tên file:</strong> <span id="fileName"></span></p>
+                        <p><strong>Kích thước:</strong> <span id="fileSize"></span></p>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="bookName">Tên sách:</label>
+                    <input type="text" id="bookName" name="book_name" placeholder="Ví dụ: toan-lop-6" pattern="[a-zA-Z0-9_-]+" required>
+                    <small>Chỉ sử dụng chữ cái, số, dấu gạch dưới (_) và gạch ngang (-)</small>
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="uploadProgress" class="upload-progress" style="display: none;">
+                    <div class="progress-bar-container">
+                        <div id="progressBar" class="progress-bar"></div>
+                    </div>
+                    <div id="progressText" class="progress-text">Đang upload...</div>
+                </div>
+
+                <div class="upload-info">
+                    <h3>Quá trình xử lý bao gồm:</h3>
+                    <ol>
+                        <li>📄 Chuyển đổi PDF thành ảnh (300 DPI)</li>
+                        <li>🤖 YOLO detection để tách câu hỏi và đáp án</li>
+                        <li>🔍 OCR để nhận diện text từ ảnh</li>
+                    </ol>
+                    <p><strong>Lưu ý:</strong> File PDF tối đa 100MB. Quá trình xử lý có thể mất vài phút tùy thuộc vào số trang.</p>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="submit" id="submitUpload" class="btn btn-primary">Bắt đầu xử lý</button>
+                    <button type="button" id="cancelUpload" class="btn btn-secondary">Hủy</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -174,7 +235,7 @@
                     </div>
                 </div>
 
-                <div class="selection-buttons">
+                <div class="modal-buttons">
                     <button type="submit" class="btn btn-primary">Cập nhật</button>
                     <button type="button" id="cancelEdit" class="btn btn-secondary">Hủy</button>
                 </div>
