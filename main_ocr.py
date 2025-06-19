@@ -13,10 +13,10 @@ def ocr_images_in_directories():
     reader = easyocr.Reader(['vi', 'en'])
 
     # Đường dẫn gốc
-    base_path = "/home/batien/Desktop/build_data/output/cropped"
+    base_path = "books_cropped/cropped_hdhtoan1_q2"
 
     # Duyệt các thư mục image_xxxx
-    folder_index = 5
+    folder_index = 0
     consecutive_missing = 0  # Đếm số thư mục liền nhau không tồn tại
     max_consecutive_missing = 5  # Dừng khi không tìm thấy 5 thư mục liền nhau
 

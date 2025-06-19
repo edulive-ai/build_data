@@ -75,36 +75,10 @@ def main():
     """
     
     # Tìm tất cả file PDF trong thư mục hiện tại
-    pdf_files = [f for f in os.listdir('.') if f.lower().endswith('.pdf')]
-    
-    if not pdf_files:
-        print("❌ Không tìm thấy file PDF nào trong thư mục hiện tại!")
-        return
-    
-    if len(pdf_files) == 1:
-        # Nếu chỉ có 1 file PDF, convert luôn
-        pdf_file = pdf_files[0]
-    else:
-        # Nếu có nhiều file, hiển thị danh sách để chọn
-        print("Tìm thấy các file PDF:")
-        for i, pdf in enumerate(pdf_files, 1):
-            print(f"{i}. {pdf}")
-        
-        try:
-            choice = int(input(f"\nChọn file PDF (1-{len(pdf_files)}): ")) - 1
-            if 0 <= choice < len(pdf_files):
-                pdf_file = pdf_files[choice]
-            else:
-                print("❌ Lựa chọn không hợp lệ!")
-                return
-        except ValueError:
-            print("❌ Vui lòng nhập số!")
-            return
-    
-    print(f"\n📄 Đang convert: {pdf_file}")
+    pdf_file = "pdf_books/30_de_thi.pdf"
     
     # Tạo thư mục con cho ảnh
-    output_dir = f"ccst"
+    output_dir = f"books_to_images/30-de-thi"
     
     # Convert PDF
     pdf_to_png_high_quality(pdf_file, output_dir)
