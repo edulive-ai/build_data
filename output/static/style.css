@@ -44,13 +44,19 @@ body {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-.folder-select {
+.folder-select, .book-select {
     width: 100%;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 5px;
     font-size: 14px;
     background-color: white;
+}
+
+.book-select {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    font-weight: bold;
 }
 
 .no-images {
@@ -327,6 +333,41 @@ textarea {
     max-height: 200px;
     border: 1px solid #ddd;
     border-radius: 5px;
+}
+
+/* Image Preview Modal */
+.image-preview-modal {
+    max-width: 90vw;
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+}
+
+.image-preview-container {
+    text-align: center;
+}
+
+.image-preview-container img {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.image-info {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.image-info p {
+    margin: 0;
+    font-family: monospace;
+    font-size: 14px;
+    color: #666;
+    word-break: break-all;
 }
 
 /* Responsive Design */

@@ -4,9 +4,11 @@ let selectedQuestionImages = [];
 let selectedAnswerImages = [];
 let currentSelectionMode = 'question'; // 'question' or 'answer'
 let editingQuestion = null;
+let currentBook = 'books_cropped/cropped'; // Default book
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
+    loadBooks();
     loadFolders();
     loadQuestions();
     setupEventListeners();
@@ -35,17 +37,101 @@ function setupEventListeners() {
 
     // Close modal when clicking outside
     window.addEventListener('click', function(event) {
-        const modal = document.getElementById('editModal');
-        if (event.target === modal) {
+        const editModal = document.getElementById('editModal');
+        const imageModal = document.getElementById('imagePreviewModal');
+        
+        if (event.target === editModal) {
             closeEditModal();
         }
+        if (event.target === imageModal) {
+            closeImagePreview();
+        }
     });
+
+    // Setup image preview modal close button
+    const imageModalClose = document.querySelector('#imagePreviewModal .close');
+    if (imageModalClose) {
+        imageModalClose.addEventListener('click', closeImagePreview);
+    }
+}
+
+function loadBooks() {
+    console.log('Loading books...');
+    fetch('/api/books')
+        .then(response => {
+            console.log('Books response status:', response.status);
+            return response.json();
+        })
+        .then(books => {
+            console.log('Books loaded:', books);
+            const bookSelect = document.getElementById('bookSelect');
+            
+            // Clear existing options
+            bookSelect.innerHTML = '';
+            
+            // Add book options
+            if (books.length > 0) {
+                books.forEach(book => {
+                    const option = document.createElement('option');
+                    option.value = book;
+                    option.textContent = book === 'cropped' ? 'Sách mặc định (cropped)' : book;
+                    bookSelect.appendChild(option);
+                    
+                    if (book === currentBook) {
+                        option.selected = true;
+                    }
+                });
+            } else {
+                // Add default option if no books found
+                const option = document.createElement('option');
+                option.value = 'cropped';
+                option.textContent = 'Sách mặc định (cropped)';
+                bookSelect.appendChild(option);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading books:', error);
+            showAlert('Lỗi khi tải danh sách sách: ' + error.message, 'error');
+            
+            // Add fallback option
+            const bookSelect = document.getElementById('bookSelect');
+            bookSelect.innerHTML = '<option value="cropped">Sách mặc định (cropped)</option>';
+        });
+}
+
+function onBookChange() {
+    const bookSelect = document.getElementById('bookSelect');
+    currentBook = bookSelect.value;
+    
+    // Reload folders and questions for the new book
+    loadFolders();
+    loadQuestions();
+    loadJsonContent();
+    
+    // Clear current selections
+    selectedQuestionImages = [];
+    selectedAnswerImages = [];
+    
+    // Clear images grid
+    const container = document.getElementById('imagesGrid');
+    container.innerHTML = '<p class="no-images">Vui lòng chọn folder để xem ảnh</p>';
+    
+    // Clear folder selection
+    const folderSelect = document.getElementById('folderSelect');
+    folderSelect.value = '';
+    
+    showAlert(`Đã chuyển sang sách: ${currentBook}`, 'success');
 }
 
 function loadFolders() {
-    fetch('/api/folders')
-        .then(response => response.json())
+    console.log('Loading folders for book:', currentBook);
+    fetch(`/api/folders?book=${currentBook}`)
+        .then(response => {
+            console.log('Folders response status:', response.status);
+            return response.json();
+        })
         .then(folders => {
+            console.log('Folders loaded:', folders);
             const folderSelect = document.getElementById('folderSelect');
             const editFolderSelect = document.getElementById('editFolderSelect');
             
@@ -72,7 +158,7 @@ function loadFolders() {
         })
         .catch(error => {
             console.error('Error loading folders:', error);
-            showAlert('Lỗi khi tải danh sách folder', 'error');
+            showAlert('Lỗi khi tải danh sách folder: ' + error.message, 'error');
         });
 }
 
@@ -88,7 +174,7 @@ function loadImagesFromFolder() {
         return;
     }
     
-    fetch(`/api/images/${selectedFolder}`)
+    fetch(`/api/images/${selectedFolder}?book=${currentBook}`)
         .then(response => response.json())
         .then(images => {
             allImages = images;
@@ -107,7 +193,7 @@ function loadImagesFromFolderForEdit(folderName) {
         return;
     }
     
-    fetch(`/api/images/${folderName}`)
+    fetch(`/api/images/${folderName}?book=${currentBook}`)
         .then(response => response.json())
         .then(images => {
             allImages = images;
@@ -129,11 +215,21 @@ function renderImagesGrid(containerId, isEdit = false) {
         imageItem.dataset.path = imagePath;
 
         const img = document.createElement('img');
-        img.src = `/images/${imagePath}`;
+        img.src = `/images/${currentBook}/${imagePath}`;
         img.alt = imagePath;
 
         imageItem.appendChild(img);
-        imageItem.addEventListener('click', () => handleImageClick(imagePath, isEdit));
+        
+        // Add selection click handler
+        imageItem.addEventListener('click', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                // Ctrl/Cmd click for image preview
+                showImagePreview(imagePath);
+            } else {
+                // Normal click for selection
+                handleImageClick(imagePath, isEdit);
+            }
+        });
 
         container.appendChild(imageItem);
     });
@@ -255,7 +351,8 @@ function handleAddQuestion(event) {
         answer: formData.get('answer'),
         difficulty: formData.get('difficulty'),
         image_question: selectedQuestionImages,
-        image_answer: selectedAnswerImages
+        image_answer: selectedAnswerImages,
+        book: currentBook
     };
 
     fetch('/api/questions', {
@@ -287,7 +384,7 @@ function handleAddQuestion(event) {
 }
 
 function loadQuestions() {
-    fetch('/api/questions')
+    fetch(`/api/questions?book=${currentBook}`)
         .then(response => response.json())
         .then(questions => {
             renderQuestionsList(questions);
@@ -321,10 +418,10 @@ function renderQuestionsList(questions) {
             </div>
             <div class="question-images">
                 ${(question.image_question || []).map(img => 
-                    `<img src="/images/${img}" alt="Question image" title="Ảnh câu hỏi: ${img}">`
+                    `<img src="/images/${currentBook}/${img}" alt="Question image" title="Ảnh câu hỏi: ${img}" onclick="showImagePreview('${img}')" style="cursor: pointer;">`
                 ).join('')}
                 ${(question.image_answer || []).map(img => 
-                    `<img src="/images/${img}" alt="Answer image" title="Ảnh đáp án: ${img}">`
+                    `<img src="/images/${currentBook}/${img}" alt="Answer image" title="Ảnh đáp án: ${img}" onclick="showImagePreview('${img}')" style="cursor: pointer;">`
                 ).join('')}
             </div>
         `;
@@ -334,7 +431,7 @@ function renderQuestionsList(questions) {
 }
 
 function editQuestion(questionIndex) {
-    fetch('/api/questions')
+    fetch(`/api/questions?book=${currentBook}`)
         .then(response => response.json())
         .then(questions => {
             const question = questions.find(q => q.index === questionIndex);
@@ -388,7 +485,8 @@ function handleEditQuestion(event) {
         answer: formData.get('answer'),
         difficulty: formData.get('difficulty'),
         image_question: editingQuestion.image_question || [],
-        image_answer: editingQuestion.image_answer || []
+        image_answer: editingQuestion.image_answer || [],
+        book: currentBook
     };
 
     fetch(`/api/questions/${editingQuestion.index}`, {
@@ -418,7 +516,7 @@ function handleEditQuestion(event) {
 
 function deleteQuestion(questionIndex) {
     if (confirm('Bạn có chắc chắn muốn xóa câu hỏi này không?')) {
-        fetch(`/api/questions/${questionIndex}`, {
+        fetch(`/api/questions/${questionIndex}?book=${currentBook}`, {
             method: 'DELETE'
         })
         .then(response => response.json())
@@ -470,7 +568,7 @@ function setupJsonViewer() {
 }
 
 function loadJsonContent() {
-    fetch('/api/json/raw')
+    fetch(`/api/json/raw?book=${currentBook}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -508,7 +606,7 @@ function saveJsonContent() {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ content: content })
+        body: JSON.stringify({ content: content, book: currentBook })
     })
     .then(response => response.json())
     .then(data => {
@@ -605,4 +703,21 @@ function updateJsonStats(jsonContent) {
     } catch (e) {
         statsElement.textContent = 'JSON không hợp lệ - không thể thống kê';
     }
+}
+
+// Image Preview Functions
+function showImagePreview(imagePath) {
+    const modal = document.getElementById('imagePreviewModal');
+    const previewImage = document.getElementById('previewImage');
+    const imagePathElement = document.getElementById('imagePath');
+    
+    previewImage.src = `/images/${currentBook}/${imagePath}`;
+    imagePathElement.textContent = `Đường dẫn: ${currentBook}/${imagePath}`;
+    
+    modal.style.display = 'block';
+}
+
+function closeImagePreview() {
+    const modal = document.getElementById('imagePreviewModal');
+    modal.style.display = 'none';
 }

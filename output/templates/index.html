@@ -20,6 +20,14 @@
             <div class="form-section">
                 <h2 class="section-title">Thêm Câu hỏi Mới</h2>
                 
+                <!-- Book Selection -->
+                <div class="form-group">
+                    <label for="bookSelect">Chọn sách:</label>
+                    <select id="bookSelect" class="book-select" onchange="onBookChange()">
+                        <option value="cropped">Sách mặc định (cropped)</option>
+                    </select>
+                </div>
+                
                 <form id="questionForm">
                     <div class="form-group">
                         <label for="subject">Môn học:</label>
@@ -178,6 +186,19 @@
                     <button type="button" id="cancelEdit" class="btn btn-secondary">Hủy</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div id="imagePreviewModal" class="modal">
+        <div class="modal-content image-preview-modal">
+            <span class="close">&times;</span>
+            <div class="image-preview-container">
+                <img id="previewImage" src="" alt="Preview">
+                <div class="image-info">
+                    <p id="imagePath"></p>
+                </div>
+            </div>
         </div>
     </div>
 
