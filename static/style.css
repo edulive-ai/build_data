@@ -55,7 +55,7 @@ body {
 
 .book-select {
     background: linear-gradient(45deg, #667eea, #764ba2);
-    color: white;
+    color: rgb(8, 8, 8);
     font-weight: bold;
 }
 
