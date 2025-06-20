@@ -411,7 +411,6 @@ function onBookChange() {
     
     // Clear images grid
     const container = document.getElementById('imagesGrid');
-    container.innerHTML = '<p class="no-images">Vui lòng chọn folder để xem ảnh</p>';
     
     // Clear folder selection
     const folderSelect = document.getElementById('folderSelect');
@@ -466,7 +465,6 @@ function loadImagesFromFolder() {
     if (!selectedFolder) {
         // Clear images grid
         const container = document.getElementById('imagesGrid');
-        container.innerHTML = '<p class="no-images">Vui lòng chọn folder để xem ảnh</p>';
         allImages = [];
         return;
     }
@@ -486,7 +484,6 @@ function loadImagesFromFolder() {
 function loadImagesFromFolderForEdit(folderName) {
     if (!folderName) {
         const container = document.getElementById('editImagesGrid');
-        container.innerHTML = '<p class="no-images">Vui lòng chọn folder để xem ảnh</p>';
         return;
     }
     
