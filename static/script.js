@@ -855,8 +855,6 @@ function showAlert(message, type) {
 function setupJsonViewer() {
     document.getElementById('loadJsonBtn').addEventListener('click', loadJsonContent);
     document.getElementById('saveJsonBtn').addEventListener('click', saveJsonContent);
-    document.getElementById('formatJsonBtn').addEventListener('click', formatJson);
-    document.getElementById('validateJsonBtn').addEventListener('click', validateJson);
 }
 
 function loadJsonContent() {
@@ -866,7 +864,6 @@ function loadJsonContent() {
             if (data.success) {
                 const editor = document.getElementById('jsonEditor');
                 editor.value = data.content;
-                updateJsonStats(data.content);
                 showAlert('Tải JSON thành công!', 'success');
                 editor.classList.remove('error');
                 editor.classList.add('success');
@@ -906,7 +903,6 @@ function saveJsonContent() {
             showAlert(data.message, 'success');
             editor.classList.remove('error');
             editor.classList.add('success');
-            updateJsonStats(content);
             // Reload questions list to reflect changes
             setTimeout(() => {
                 loadQuestions();
@@ -934,7 +930,6 @@ function formatJson() {
         showAlert('Format JSON thành công!', 'success');
         editor.classList.remove('error');
         editor.classList.add('success');
-        updateJsonStats(formatted);
     } catch (e) {
         showAlert('JSON không hợp lệ! Không thể format.', 'error');
         editor.classList.add('error');
@@ -951,49 +946,9 @@ function validateJson() {
         showAlert(`JSON hợp lệ! Có ${questionsCount} câu hỏi.`, 'success');
         editor.classList.remove('error');
         editor.classList.add('success');
-        updateJsonStats(content);
     } catch (e) {
         showAlert('JSON không hợp lệ: ' + e.message, 'error');
         editor.classList.add('error');
-    }
-}
-
-function updateJsonStats(jsonContent) {
-    const statsElement = document.getElementById('jsonStats');
-    
-    try {
-        const parsed = JSON.parse(jsonContent);
-        const questionsCount = Array.isArray(parsed) ? parsed.length : 0;
-        const chars = jsonContent.length;
-        const lines = jsonContent.split('\n').length;
-        
-        // Count unique subjects, chapters and lessons
-        const subjects = new Set();
-        const chapters = new Set();
-        const lessons = new Set();
-        const difficulties = { easy: 0, medium: 0, hard: 0 };
-        
-        if (Array.isArray(parsed)) {
-            parsed.forEach(q => {
-                if (q.subject) subjects.add(q.subject);
-                if (q.chapter) chapters.add(q.chapter);
-                if (q.lesson) lessons.add(q.lesson);
-                if (q.difficulty) difficulties[q.difficulty] = (difficulties[q.difficulty] || 0) + 1;
-            });
-        }
-        
-        statsElement.innerHTML = `
-            <strong>Thống kê:</strong> 
-            ${questionsCount} câu hỏi | 
-            ${subjects.size} môn học | 
-            ${chapters.size} chương | 
-            ${lessons.size} bài học | 
-            ${lines} dòng | 
-            ${chars} ký tự |
-            Độ khó: Dễ(${difficulties.easy}) Vừa(${difficulties.medium}) Khó(${difficulties.hard})
-        `;
-    } catch (e) {
-        statsElement.textContent = 'JSON không hợp lệ - không thể thống kê';
     }
 }
 

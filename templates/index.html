@@ -13,7 +13,7 @@
             <h1>Công Cụ Xử Lý Data PDF</h1>
             <div class="nav-tabs">
                 <button id="uploadPDFBtn" class="tab-btn">📤 Upload PDF</button>
-                <a href="/gallery" class="tab-btn">🖼️ View Images Detection</a>
+                <a href="/gallery" class="tab-btn">🖼️ View Gallery</a>
             </div>
         </div>
 
@@ -75,7 +75,7 @@
                     </div>
                     <!-- Text Content Display -->
                     <div class="form-group" id="textContentGroup" style="display: none;">
-                        <label for="textContent">Nội dung text.txt:</label>
+                        <label for="textContent">Nội dung ocr:</label>
                         <div class="text-content-header">
                             <button type="button" id="editTextBtn" class="btn btn-secondary btn-small">Chỉnh sửa</button>
                             <button type="button" id="saveTextBtn" class="btn btn-success btn-small" style="display: none;">Lưu</button>
@@ -119,9 +119,6 @@
                     </div>
                 </div>
                 
-                <div class="json-stats">
-                    <div id="jsonStats" class="json-stats-text">Chưa có dữ liệu JSON</div>
-                </div>
                 
                 <div class="json-editor-container">
                     <textarea id="jsonEditor" class="json-editor" placeholder="Nội dung JSON sẽ hiển thị ở đây..."></textarea>
