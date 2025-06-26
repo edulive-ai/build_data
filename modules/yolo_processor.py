@@ -130,7 +130,7 @@ class YOLOProcessor:
             scale_y = fitz_h / yolo_h
             
             # === YOLO detection ===
-            det_res = self.model.predict(str(image_path), imgsz=1024, conf=0.2, device="cuda")
+            det_res = self.model.predict(str(image_path), imgsz=1024, conf=0.3, device="cuda")
             
             if not det_res[0].boxes:
                 return {

@@ -4,3 +4,6 @@ PyMuPDF
 huggingface_hub
 doclayout-yolo
 Pillow<10.0
+openai
+opencv-python
+python-dotenv

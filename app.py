@@ -6,6 +6,7 @@ import threading
 import time
 from pathlib import Path
 from werkzeug.utils import secure_filename
+from flask_cors import CORS
 
 # Import các module xử lý
 from modules.processing_manager import ProcessingManager
@@ -414,7 +415,31 @@ def get_images_by_folder(folder_name):
                 relative_path = os.path.join(folder_name, file).replace('\\', '/')
                 images.append(relative_path)
     return jsonify(images)
-
+@app.route('/api/text/<folder_name>')
+def get_text_content(folder_name):
+    """API lấy nội dung file text.txt trong folder ảnh"""
+    try:
+        book_name = request.args.get('book', "books_cropped/cropped_hdhtoan1_q3")
+        text_file_path = os.path.join(book_name, folder_name, 'text.txt')
+        
+        if os.path.exists(text_file_path):
+            with open(text_file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return jsonify({
+                'success': True, 
+                'content': content,
+                'folder': folder_name,
+                'book': book_name
+            })
+        else:
+            return jsonify({
+                'success': False, 
+                'error': f'Không tìm thấy file text.txt trong folder {folder_name}',
+                'folder': folder_name,
+                'book': book_name
+            })
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Lỗi khi đọc file: {str(e)}'}), 500
 # === JSON EDITOR ROUTES ===
 @app.route('/api/json/raw', methods=['GET'])
 def get_json_raw():
@@ -465,9 +490,13 @@ def internal_error(e):
     return jsonify({'success': False, 'error': 'Lỗi server internal'}), 500
 
 if __name__ == '__main__':
+    # Import và setup CORS
+    from flask_cors import CORS
+    CORS(app, supports_credentials=True)
+    
     print("🚀 Starting PDF Processing Application...")
     print(f"📁 Upload folder: {UPLOAD_FOLDER}")
     print(f"📚 Default book: {DEFAULT_BOOK}")
     print(f"📂 Books directory: {BOOKS_DIR}")
     
-    app.run(debug=True, host='localhost', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)

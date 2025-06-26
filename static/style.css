@@ -859,3 +859,49 @@ textarea {
         overflow: visible;
     }
 }
+.text-content-header {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    justify-content: flex-end;
+}
+
+.btn-small {
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+.text-display {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    min-height: 100px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.text-display.empty {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    padding: 30px;
+}
+
+.text-editor {
+    width: 100%;
+    min-height: 120px;
+    max-height: 300px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    resize: vertical;
+}

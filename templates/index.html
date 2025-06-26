@@ -13,7 +13,7 @@
             <h1>Công Cụ Xử Lý Data PDF</h1>
             <div class="nav-tabs">
                 <button id="uploadPDFBtn" class="tab-btn">📤 Upload PDF</button>
-                <a href="/gallery" class="tab-btn">🖼️ Gallery</a>
+                <a href="/gallery" class="tab-btn">🖼️ View Images Detection</a>
             </div>
         </div>
 
@@ -73,6 +73,17 @@
                             <option value="">-- Chọn folder ảnh --</option>
                         </select>
                     </div>
+                    <!-- Text Content Display -->
+                    <div class="form-group" id="textContentGroup" style="display: none;">
+                        <label for="textContent">Nội dung text.txt:</label>
+                        <div class="text-content-header">
+                            <button type="button" id="editTextBtn" class="btn btn-secondary btn-small">Chỉnh sửa</button>
+                            <button type="button" id="saveTextBtn" class="btn btn-success btn-small" style="display: none;">Lưu</button>
+                            <button type="button" id="cancelTextBtn" class="btn btn-secondary btn-small" style="display: none;">Hủy</button>
+                        </div>
+                        <div id="textDisplay" class="text-display"></div>
+                        <textarea id="textEditor" class="text-editor" style="display: none;"></textarea>
+                    </div>
 
                     <!-- Image Selection Controls -->
                     <div class="form-group">
@@ -105,8 +116,6 @@
                     <div class="json-controls">
                         <button id="loadJsonBtn" class="btn btn-primary">Tải JSON</button>
                         <button id="saveJsonBtn" class="btn btn-success">Lưu JSON</button>
-                        <button id="formatJsonBtn" class="btn btn-secondary">Format JSON</button>
-                        <button id="validateJsonBtn" class="btn btn-warning">Kiểm tra JSON</button>
                     </div>
                 </div>
                 
@@ -217,6 +226,16 @@
                     <select id="editFolderSelect" class="folder-select" onchange="loadImagesFromFolderForEdit(this.value)">
                         <option value="">-- Chọn folder ảnh --</option>
                     </select>
+                </div>
+                <div class="form-group" id="editTextContentGroup" style="display: none;">
+                    <label for="editTextContent">Nội dung text.txt:</label>
+                    <div class="text-content-header">
+                        <button type="button" id="editTextBtnModal" class="btn btn-secondary btn-small">Chỉnh sửa</button>
+                        <button type="button" id="saveTextBtnModal" class="btn btn-success btn-small" style="display: none;">Lưu</button>
+                        <button type="button" id="cancelTextBtnModal" class="btn btn-secondary btn-small" style="display: none;">Hủy</button>
+                    </div>
+                    <div id="editTextDisplay" class="text-display"></div>
+                    <textarea id="editTextEditor" class="text-editor" style="display: none;"></textarea>
                 </div>
 
                 <!-- Edit Image Selection Controls -->

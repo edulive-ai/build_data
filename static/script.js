@@ -1013,3 +1013,204 @@ function closeImagePreview() {
     const modal = document.getElementById('imagePreviewModal');
     modal.style.display = 'none';
 }
+let currentTextContent = '';
+let currentTextFolder = '';
+let isEditingText = false;
+
+// Thêm vào hàm setupEventListeners()
+function setupEventListeners() {
+    // ... existing code ...
+    
+    // Text content editing
+    document.getElementById('editTextBtn').addEventListener('click', startTextEditing);
+    document.getElementById('saveTextBtn').addEventListener('click', saveTextContent);
+    document.getElementById('cancelTextBtn').addEventListener('click', cancelTextEditing);
+}
+
+// Sửa hàm loadImagesFromFolder()
+function loadImagesFromFolder() {
+    const folderSelect = document.getElementById('folderSelect');
+    const selectedFolder = folderSelect.value;
+    
+    if (!selectedFolder) {
+        const container = document.getElementById('imagesGrid');
+        allImages = [];
+        hideTextContent();
+        return;
+    }
+    
+    fetch(`/api/images/${selectedFolder}?book=${currentBook}`)
+        .then(response => response.json())
+        .then(images => {
+            allImages = images;
+            renderImagesGrid('imagesGrid', false);
+            loadTextFromFolder(selectedFolder);
+        })
+        .catch(error => {
+            console.error('Error loading images:', error);
+            showAlert('Lỗi khi tải ảnh từ folder', 'error');
+        });
+}
+
+// Text content functions
+function loadTextFromFolder(folderName) {
+    currentTextFolder = folderName;
+    
+    fetch(`/api/text/${folderName}?book=${currentBook}`)
+        .then(response => response.json())
+        .then(data => {
+            const textGroup = document.getElementById('textContentGroup');
+            const textDisplay = document.getElementById('textDisplay');
+            
+            if (data.success && data.content.trim()) {
+                currentTextContent = data.content;
+                textDisplay.textContent = data.content;
+                textDisplay.classList.remove('empty');
+                textGroup.style.display = 'block';
+            } else {
+                currentTextContent = '';
+                textDisplay.textContent = 'Không có file text.txt trong folder này';
+                textDisplay.classList.add('empty');
+                textGroup.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading text:', error);
+            hideTextContent();
+        });
+}
+
+function hideTextContent() {
+    const textGroup = document.getElementById('textContentGroup');
+    textGroup.style.display = 'none';
+    currentTextContent = '';
+    currentTextFolder = '';
+    cancelTextEditing();
+}
+
+function startTextEditing() {
+    if (!currentTextFolder) return;
+    
+    isEditingText = true;
+    const textDisplay = document.getElementById('textDisplay');
+    const textEditor = document.getElementById('textEditor');
+    const editBtn = document.getElementById('editTextBtn');
+    const saveBtn = document.getElementById('saveTextBtn');
+    const cancelBtn = document.getElementById('cancelTextBtn');
+    
+    textEditor.value = currentTextContent;
+    textDisplay.style.display = 'none';
+    textEditor.style.display = 'block';
+    editBtn.style.display = 'none';
+    saveBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'inline-block';
+    
+    textEditor.focus();
+}
+
+function saveTextContent() {
+    if (!currentTextFolder) return;
+    
+    const textEditor = document.getElementById('textEditor');
+    const newContent = textEditor.value;
+    
+    fetch(`/api/text/${currentTextFolder}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            content: newContent, 
+            book: currentBook 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            currentTextContent = newContent;
+            const textDisplay = document.getElementById('textDisplay');
+            
+            if (newContent.trim()) {
+                textDisplay.textContent = newContent;
+                textDisplay.classList.remove('empty');
+            } else {
+                textDisplay.textContent = 'File text.txt trống';
+                textDisplay.classList.add('empty');
+            }
+            
+            cancelTextEditing();
+            showAlert('Lưu nội dung text thành công!', 'success');
+        } else {
+            showAlert('Lỗi khi lưu text: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving text:', error);
+        showAlert('Lỗi khi lưu nội dung text', 'error');
+    });
+}
+
+function cancelTextEditing() {
+    isEditingText = false;
+    const textDisplay = document.getElementById('textDisplay');
+    const textEditor = document.getElementById('textEditor');
+    const editBtn = document.getElementById('editTextBtn');
+    const saveBtn = document.getElementById('saveTextBtn');
+    const cancelBtn = document.getElementById('cancelTextBtn');
+    
+    textDisplay.style.display = 'block';
+    textEditor.style.display = 'none';
+    editBtn.style.display = 'inline-block';
+    saveBtn.style.display = 'none';
+    cancelBtn.style.display = 'none';
+}
+// Thêm vào setupEventListeners()
+document.getElementById('editTextBtnModal').addEventListener('click', () => startTextEditingModal());
+document.getElementById('saveTextBtnModal').addEventListener('click', () => saveTextContentModal());
+document.getElementById('cancelTextBtnModal').addEventListener('click', () => cancelTextEditingModal());
+
+// Sửa hàm loadImagesFromFolderForEdit()
+function loadImagesFromFolderForEdit(folderName) {
+    if (!folderName) {
+        const container = document.getElementById('editImagesGrid');
+        const textGroup = document.getElementById('editTextContentGroup');
+        textGroup.style.display = 'none';
+        return;
+    }
+    
+    fetch(`/api/images/${folderName}?book=${currentBook}`)
+        .then(response => response.json())
+        .then(images => {
+            allImages = images;
+            renderImagesGrid('editImagesGrid', true);
+            loadTextFromFolderModal(folderName);
+        })
+        .catch(error => {
+            console.error('Error loading images for edit:', error);
+            showAlert('Lỗi khi tải ảnh cho edit', 'error');
+        });
+}
+
+function loadTextFromFolderModal(folderName) {
+    fetch(`/api/text/${folderName}?book=${currentBook}`)
+        .then(response => response.json())
+        .then(data => {
+            const textGroup = document.getElementById('editTextContentGroup');
+            const textDisplay = document.getElementById('editTextDisplay');
+            
+            if (data.success && data.content.trim()) {
+                textDisplay.textContent = data.content;
+                textDisplay.classList.remove('empty');
+                textGroup.style.display = 'block';
+            } else {
+                textDisplay.textContent = 'Không có file text.txt trong folder này';
+                textDisplay.classList.add('empty');
+                textGroup.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading text for modal:', error);
+            const textGroup = document.getElementById('editTextContentGroup');
+            textGroup.style.display = 'none';
+        });
+}

@@ -168,32 +168,32 @@ class ProcessingManager:
                 self._update_progress(status_id, 66, 'Hoàn thành YOLO detection')
             
             # Step 3: OCR Processing
-            if 'ocr' in steps_to_run:
-                self._update_progress(status_id, 70, 'Đang thực hiện OCR...')
+            # if 'ocr' in steps_to_run:
+            #     self._update_progress(status_id, 70, 'Đang thực hiện OCR...')
                 
-                cropped_path = f"books_cropped/{book_name}"
-                success, message, ocr_info = self.ocr_processor.process_directories(
-                    cropped_path, update_status
-                )
+            #     cropped_path = f"books_cropped/{book_name}"
+            #     success, message, ocr_info = self.ocr_processor.process_directories(
+            #         cropped_path, update_status
+            #     )
                 
-                if not success:
-                    self._set_error(status_id, f"Lỗi OCR: {message}")
-                    return self.status_data[status_id]
+            #     if not success:
+            #         self._set_error(status_id, f"Lỗi OCR: {message}")
+            #         return self.status_data[status_id]
                 
-                results['ocr'] = ocr_info
-                self.status_data[status_id]['completed_steps'].append('ocr')
-                self._update_progress(status_id, 100, 'Hoàn thành OCR')
+            #     results['ocr'] = ocr_info
+            #     self.status_data[status_id]['completed_steps'].append('ocr')
+            #     self._update_progress(status_id, 100, 'Hoàn thành OCR')
             
-            # Hoàn thành
-            self.status_data[status_id].update({
-                'status': 'completed',
-                'message': f'Hoàn thành các bước: {", ".join(steps_to_run)}',
-                'book_name': book_name,
-                'end_time': time.time(),
-                'results': results
-            })
+            # # Hoàn thành
+            # self.status_data[status_id].update({
+            #     'status': 'completed',
+            #     'message': f'Hoàn thành các bước: {", ".join(steps_to_run)}',
+            #     'book_name': book_name,
+            #     'end_time': time.time(),
+            #     'results': results
+            # })
             
-            return self.status_data[status_id]
+            # return self.status_data[status_id]
             
         except Exception as e:
             self._set_error(status_id, f"Lỗi không xác định: {str(e)}")
@@ -318,12 +318,12 @@ class ProcessingManager:
             }
         
         # OCR processing summary
-        if 'ocr_info' in results:
-            ocr_info = results['ocr_info']
-            summary['results']['ocr'] = {
-                'total_folders': ocr_info.get('total_folders', 0),
-                'processed_folders': ocr_info.get('processed_folders', 0),
-                'status': 'success'
-            }
+        # if 'ocr_info' in results:
+        #     ocr_info = results['ocr_info']
+        #     summary['results']['ocr'] = {
+        #         'total_folders': ocr_info.get('total_folders', 0),
+        #         'processed_folders': ocr_info.get('processed_folders', 0),
+        #         'status': 'success'
+        #     }
         
-        return summary
+        # return summary
