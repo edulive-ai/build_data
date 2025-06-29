@@ -196,20 +196,20 @@ class OCRProcessor:
     
     def _write_ocr_result_to_file(self, file_handle, result: Dict[str, Any]) -> None:
     # Header với tên file
-        file_handle.write("=" * 80 + "\n")
+        file_handle.write("=" * 30 + "\n")
         file_handle.write(f"FILE: {result['filename']}\n")
-        file_handle.write("=" * 80 + "\n\n")
+        file_handle.write("=" * 30 + "\n\n")
         
         if result['success']:
             # Phần Raw Text (Sorted)
             file_handle.write("📝 RAW TEXT (SORTED OCR RESULTS):\n")
-            file_handle.write("-" * 50 + "\n")
+            file_handle.write("-" * 30 + "\n")
             file_handle.write(result['raw_text'])
             file_handle.write("\n\n")
             
             # Phần Cleaned Text
             file_handle.write("✨ CLEANED TEXT (GPT PROCESSED):\n") 
-            file_handle.write("-" * 50 + "\n")
+            file_handle.write("-" * 30 + "\n")
             file_handle.write(result['cleaned_text'])
             file_handle.write("\n\n")
     
