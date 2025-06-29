@@ -1,9 +1,13 @@
 # app.py
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, redirect
 import os
 import json
 import threading
 import time
+import jwt
+import hashlib
+from datetime import datetime, timedelta
+from functools import wraps
 from pathlib import Path
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
@@ -15,6 +19,315 @@ from modules.gallery_manager import GalleryManager
 app = Flask(__name__, 
            template_folder='templates',
            static_folder='static')
+app.config['SECRET_KEY'] = 'your-secret-key-change-this'  # Thay đổi secret key này
+app.config['JWT_EXPIRATION_DELTA'] = timedelta(hours=24)
+
+# Cấu hình user credentials (thay thế bằng database trong production)
+USERS = {
+    'admin': {
+        'password': hashlib.sha256('admin123'.encode()).hexdigest(),
+        'role': 'admin'
+    },
+    'user': {
+        'password': hashlib.sha256('user123'.encode()).hexdigest(),
+        'role': 'user'
+    }
+    # Thêm users khác ở đây
+}
+
+# Authentication decorator
+def require_auth(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = None
+        
+        # Check for token in header
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            try:
+                token = auth_header.split(" ")[1]  # Bearer <token>
+            except IndexError:
+                return jsonify({'error': 'Token format invalid'}), 401
+        
+        # THÊM DÒNG NÀY - Check for token in cookies
+        elif 'auth_token' in request.cookies:
+            token = request.cookies['auth_token']
+        
+        # Check for token in session
+        elif 'auth_token' in request.form:
+            token = request.form['auth_token']
+        elif 'auth_token' in request.args:
+            token = request.args['auth_token']
+        
+        if not token:
+            return redirect('/login')
+        
+        try:
+            # Decode token
+            payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            current_user = payload['user']
+            
+            # Verify user still exists
+            if current_user not in USERS:
+                return redirect('/login')  # SỬA: redirect thay vì jsonify
+                
+        except jwt.ExpiredSignatureError:
+            return redirect('/login')  # SỬA: redirect thay vì jsonify
+        except jwt.InvalidTokenError:
+            return redirect('/login')  # SỬA: redirect thay vì jsonify
+        
+        return f(current_user, *args, **kwargs)
+    return decorated_function
+
+def generate_token(username):
+    """Generate JWT token for user"""
+    payload = {
+        'user': username,
+        'role': USERS[username]['role'],
+        'exp': datetime.utcnow() + app.config['JWT_EXPIRATION_DELTA'],
+        'iat': datetime.utcnow()
+    }
+    return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+
+def verify_password(username, password):
+    """Verify user credentials"""
+    if username not in USERS:
+        return False
+    
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+    return USERS[username]['password'] == password_hash
+
+# === AUTHENTICATION ROUTES ===
+@app.route('/login')
+def login_page():
+    """Trang đăng nhập"""
+    # Kiểm tra xem đã đăng nhập chưa
+    token = request.cookies.get('auth_token') or request.headers.get('Authorization')
+    if token:
+        try:
+            if token.startswith('Bearer '):
+                token = token[7:]
+            payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            # Nếu token hợp lệ, chuyển hướng về trang chính
+            return redirect('/')
+        except:
+            pass  # Token không hợp lệ, tiếp tục hiển thị trang login
+    
+    return render_template('login.html')
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+   """API đăng nhập"""
+   try:
+       data = request.json
+       username = data.get('username', '').strip()
+       password = data.get('password', '')
+       remember_me = data.get('remember_me', False)
+       
+       # Validate input
+       if not username or not password:
+           return jsonify({
+               'success': False,
+               'message': 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu'
+           }), 400
+       
+       # Verify credentials
+       if not verify_password(username, password):
+           return jsonify({
+               'success': False,
+               'message': 'Tên đăng nhập hoặc mật khẩu không đúng'
+           }), 401
+       
+       # Generate token
+       token = generate_token(username)
+       
+       response_data = {
+           'success': True,
+           'message': 'Đăng nhập thành công',
+           'token': token,
+           'user': {
+               'username': username,
+               'role': USERS[username]['role']
+           }
+       }
+       
+       # Set session cookie - luôn set cookie
+       response = jsonify(response_data)
+       response.set_cookie('auth_token', token, 
+                         max_age=int(app.config['JWT_EXPIRATION_DELTA'].total_seconds()),
+                         httponly=False, secure=False)  # httponly=False để JS có thể đọc
+       
+       return response
+       
+   except Exception as e:
+       return jsonify({
+           'success': False,
+           'message': 'Lỗi server: ' + str(e)
+       }), 500
+
+@app.route('/api/verify-token', methods=['POST'])
+def verify_token():
+    """Verify JWT token"""
+    try:
+        token = None
+        
+        # Get token from various sources
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            try:
+                token = auth_header.split(" ")[1]
+            except IndexError:
+                pass
+        
+        if not token and 'auth_token' in request.cookies:
+            token = request.cookies['auth_token']
+        
+        if not token:
+            return jsonify({'valid': False, 'message': 'No token provided'}), 401
+        
+        # Decode and verify token
+        payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        username = payload['user']
+        
+        # Check if user still exists
+        if username not in USERS:
+            return jsonify({'valid': False, 'message': 'User not found'}), 401
+        
+        return jsonify({
+            'valid': True,
+            'user': {
+                'username': username,
+                'role': USERS[username]['role']
+            }
+        })
+        
+    except jwt.ExpiredSignatureError:
+        return jsonify({'valid': False, 'message': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'valid': False, 'message': 'Invalid token'}), 401
+    except Exception as e:
+        return jsonify({'valid': False, 'message': str(e)}), 500
+
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    """API đăng xuất"""
+    response = jsonify({'success': True, 'message': 'Đăng xuất thành công'})
+    response.set_cookie('auth_token', '', expires=0)
+    return response
+
+@app.route('/api/change-password', methods=['POST'])
+@require_auth
+def change_password(current_user):
+    """API đổi mật khẩu"""
+    try:
+        data = request.json
+        old_password = data.get('old_password', '')
+        new_password = data.get('new_password', '')
+        
+        # Validate input
+        if not old_password or not new_password:
+            return jsonify({
+                'success': False,
+                'message': 'Vui lòng nhập đầy đủ mật khẩu cũ và mật khẩu mới'
+            }), 400
+        
+        if len(new_password) < 4:
+            return jsonify({
+                'success': False,
+                'message': 'Mật khẩu mới phải có ít nhất 4 ký tự'
+            }), 400
+        
+        # Verify old password
+        if not verify_password(current_user, old_password):
+            return jsonify({
+                'success': False,
+                'message': 'Mật khẩu cũ không đúng'
+            }), 401
+        
+        # Update password
+        new_password_hash = hashlib.sha256(new_password.encode()).hexdigest()
+        USERS[current_user]['password'] = new_password_hash
+        
+        return jsonify({
+            'success': True,
+            'message': 'Đổi mật khẩu thành công'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': 'Lỗi server: ' + str(e)
+        }), 500
+
+# === PROTECT EXISTING ROUTES ===
+# Thêm decorator @require_auth vào các routes cần bảo vệ
+
+# Ví dụ bảo vệ trang chính:
+@app.route('/')
+@require_auth
+def index_protected(current_user):
+    """Trang chính có bảo vệ"""
+    return render_template('index.html', user=current_user)
+
+# === USER MANAGEMENT (OPTIONAL) ===
+@app.route('/api/users', methods=['GET'])
+@require_auth
+def get_users(current_user):
+    """API lấy danh sách users (chỉ admin)"""
+    if USERS[current_user]['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    users_list = []
+    for username, user_data in USERS.items():
+        users_list.append({
+            'username': username,
+            'role': user_data['role']
+        })
+    
+    return jsonify(users_list)
+
+@app.route('/api/add-user', methods=['POST'])
+@require_auth
+def add_user(current_user):
+    """API thêm user mới (chỉ admin)"""
+    if USERS[current_user]['role'] != 'admin':
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    try:
+        data = request.json
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        role = data.get('role', 'user')
+        
+        if not username or not password:
+            return jsonify({
+                'success': False,
+                'message': 'Vui lòng nhập đầy đủ thông tin'
+            }), 400
+        
+        if username in USERS:
+            return jsonify({
+                'success': False,
+                'message': 'Tên đăng nhập đã tồn tại'
+            }), 400
+        
+        # Add new user
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        USERS[username] = {
+            'password': password_hash,
+            'role': role
+        }
+        
+        return jsonify({
+            'success': True,
+            'message': f'Thêm user {username} thành công'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': 'Lỗi server: ' + str(e)
+        }), 500
 
 # Cấu hình upload
 UPLOAD_FOLDER = 'uploads'
@@ -144,12 +457,6 @@ def process_pdf_background(pdf_path, book_name, status_id, processing_mode='comp
         
     except Exception as e:
         processing_manager._set_error(status_id, f"Lỗi trong background processing: {str(e)}")
-
-# === MAIN ROUTES ===
-@app.route('/')
-def index():
-    """Trang chính hiển thị interface"""
-    return render_template('index.html')
 
 # === GALLERY ROUTES ===
 @app.route('/gallery')
