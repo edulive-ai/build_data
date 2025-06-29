@@ -9,12 +9,31 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
+        <!-- Header with integrated user info and logout -->
         <div class="header">
-            <h1>Công Cụ Xử Lý Data PDF</h1>
-            <div class="nav-tabs">
-                <button id="uploadPDFBtn" class="tab-btn">📤 Upload PDF</button>
-                <a href="/gallery" class="tab-btn">🖼️ View Gallery</a>
+            <div class="header-content">
+                <div class="header-main">
+                    <h1>Công Cụ Xử Lý Data PDF</h1>
+                    <div class="nav-tabs">
+                        <button id="uploadPDFBtn" class="tab-btn">📤 Upload PDF</button>
+                        <a href="/gallery" class="tab-btn">🖼️ View Gallery</a>
+                    </div>
+                </div>
+                
+                <div class="header-auth">
+                    <div id="userInfo" class="user-info-header" style="display: none;">
+                        <div class="user-details-header">
+                            <span class="user-name-header">👋 Xin chào, <span id="usernameDisplay"></span></span>
+                            <span class="user-role-header" id="userRoleDisplay"></span>
+                        </div>
+                    </div>
+                    <button id="logoutBtn" class="logout-btn-header" style="display: none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                        </svg>
+                        Đăng xuất
+                    </button>
+                </div>
             </div>
         </div>
 

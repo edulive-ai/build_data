@@ -22,7 +22,109 @@ body {
     padding: 20px;
     border-radius: 10px;
     margin-bottom: 30px;
+
+    /* Quan trọng: Biến .header thành Flex Container */
+    display: flex;
+    align-items: center; /* Căn giữa các mục con theo chiều dọc */
+    justify-content: center; /* Căn giữa nội dung chính (header-content) */
+    position: relative;
+    min-height: 80px; /* Ví dụ: đặt chiều cao tối thiểu */
+}
+
+.header-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
+}
+
+.header-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    white-space: nowrap; 
+}
+
+.header-auth {
+    position: absolute;
+    top: 20px; 
+    right: 20px; 
+    flex-direction: column;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-main h1 {
+    margin-bottom: 10px;
+}
+
+.user-info-header {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    padding: 8px 15px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-details-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.user-name-header {
+    font-weight: 600;
+    color: white;
+    font-size: 14px;
+}
+
+.user-role-header {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+}
+
+.logout-btn-header {
+    background: rgba(255, 107, 107, 0.9);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.logout-btn-header:hover {
+    background: rgba(238, 90, 82, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.logout-btn-header:active {
+    transform: translateY(0);
+}
+
+.logout-btn-header svg {
+    transition: transform 0.3s ease;
+}
+
+.logout-btn-header:hover svg {
+    transform: translateX(2px);
 }
 
 .main-content {
@@ -70,8 +172,29 @@ body {
 .section-title {
     color: #333;
     margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #667eea;
+    text-align: center; /* Căn giữa văn bản bên trong */
+
+    /* ***** KÍCH THƯỚC CỐ ĐỊNH ***** */
+    width: 400px; /* Chiều rộng cố định, ví dụ 300px */
+    height: 60px; /* Chiều cao cố định, ví dụ 100px */
+    
+    /* ***** CĂN GIỮA BOX ***** */
+    display: block; /* Đảm bảo nó là một phần tử khối */
+    margin-left: auto; /* Căn giữa theo chiều ngang */
+    margin-right: auto; /* Căn giữa theo chiều ngang */
+    /* Hoặc viết gọn là: margin: 0 auto; */
+
+    /* ***** THÊM HIỆU ỨNG BOX (Tùy chọn) ***** */
+    border: 2px solid #ccc; /* Viền */
+    border-radius: 8px; /* Bo tròn góc */
+    background-color: #f9f9f9; /* Màu nền */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Đổ bóng */
+
+    /* ***** CĂN GIỮA NỘI DUNG BÊN TRONG BOX (nếu có nhiều dòng) ***** */
+    display: flex; /* Biến section-title thành flex container */
+    justify-content: center; /* Căn giữa nội dung theo chiều ngang */
+    align-items: center; /* Căn giữa nội dung theo chiều dọc */
+    padding: 10px; /* Thêm padding để nội dung không dính sát viền */
 }
 
 .form-group {
@@ -232,7 +355,7 @@ textarea {
 }
 
 .questions-list {
-    max-height: 600px;
+    max-height: 1000px;
     overflow-y: auto;
 }
 
@@ -531,9 +654,9 @@ textarea {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-direction: column;
     margin-bottom: 15px;
     flex-wrap: wrap;
-    gap: 15px;
 }
 
 .json-controls {
@@ -570,7 +693,7 @@ textarea {
 
 .json-editor {
     width: 100%;
-    height: 600px;
+    height: 800px;
     padding: 15px;
     border: none;
     font-family: 'Courier New', monospace;
@@ -699,6 +822,54 @@ textarea {
     color: #c62828;
 }
 
+/* Text Content Styles */
+.text-content-header {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    justify-content: flex-end;
+}
+
+.btn-small {
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+.text-display {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    min-height: 100px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.text-display.empty {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    padding: 30px;
+}
+
+.text-editor {
+    width: 100%;
+    min-height: 120px;
+    max-height: 300px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    resize: vertical;
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
     .main-content-3col {
@@ -711,6 +882,45 @@ textarea {
 }
 
 @media (max-width: 768px) {
+    .header-content {
+        display: flex; /* Biến header-content thành flex container */
+        justify-content: center; /* Căn giữa các mục theo chiều ngang */
+        align-items: center; /* Căn giữa các mục theo chiều dọc */
+        width: 100%;
+        height: 100%; /* Đảm bảo header-content có chiều cao */
+        position: relative; /* Rất quan trọng! Làm gốc cho position: absolute của header-auth */
+    }
+    
+    .header-main {
+        /* KHÔNG CẦN position: absolute, top, left, transform nữa */
+        /* Flexbox của header-content sẽ lo việc căn giữa cho header-main */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        white-space: nowrap;
+    }
+    
+    .header-auth {
+        position: absolute; /* Giữ nguyên để header-auth không chiếm không gian và nằm ở góc phải */
+        right: 0;
+        top: 50%;
+        flex-direction: column;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .user-details-header {
+        align-items: center;
+    }
+    
+    .logout-btn-header {
+        padding: 6px 14px;
+        font-size: 12px;
+    }
+
     .main-content, .main-content-3col {
         grid-template-columns: 1fr;
     }
@@ -764,6 +974,26 @@ textarea {
     
     .stage-step::after {
         display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-auth {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .user-info-header {
+        padding: 6px 12px;
+    }
+    
+    .user-name-header {
+        font-size: 13px;
+    }
+    
+    .user-role-header {
+        font-size: 9px;
+        padding: 1px 6px;
     }
 }
 
@@ -858,50 +1088,4 @@ textarea {
         max-height: none;
         overflow: visible;
     }
-}
-.text-content-header {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 10px;
-    justify-content: flex-end;
-}
-
-.btn-small {
-    font-size: 12px;
-    padding: 6px 12px;
-}
-
-.text-display {
-    background: #f8f9fa;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 15px;
-    min-height: 100px;
-    max-height: 200px;
-    overflow-y: auto;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-
-.text-display.empty {
-    color: #999;
-    font-style: italic;
-    text-align: center;
-    padding: 30px;
-}
-
-.text-editor {
-    width: 120%;
-    min-height: 120px;
-    max-height: 300px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    line-height: 1.4;
-    resize: vertical;
 }

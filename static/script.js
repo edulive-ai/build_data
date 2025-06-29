@@ -8,11 +8,16 @@ let currentBook = 'cropped'; // Default book
 let processingStatusId = null;
 let processingInterval = null;
 
+// Global auth state
+let currentUser = null;
+let authToken = null;
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     initializeAuth(); // Khởi tạo auth trước
     // Các initialization khác sẽ được gọi trong setupAuthenticatedApp()
 });
+
 function getBookDisplayName(bookPath) {
     if (bookPath.startsWith('books_cropped/')) {
         return bookPath.replace('books_cropped/', '');
@@ -26,6 +31,7 @@ function getBookFullPath(displayName) {
     }
     return 'books_cropped/' + displayName;
 }
+
 function setupEventListeners() {
     // Form submission
     document.getElementById('questionForm').addEventListener('submit', handleAddQuestion);
@@ -67,6 +73,189 @@ function setupEventListeners() {
     if (imageModalClose) {
         imageModalClose.addEventListener('click', closeImagePreview);
     }
+
+    // Text content editing
+    document.getElementById('editTextBtn').addEventListener('click', startTextEditing);
+    document.getElementById('saveTextBtn').addEventListener('click', saveTextContent);
+    document.getElementById('cancelTextBtn').addEventListener('click', cancelTextEditing);
+
+    // Text content editing for modal
+    document.getElementById('editTextBtnModal').addEventListener('click', () => startTextEditingModal());
+    document.getElementById('saveTextBtnModal').addEventListener('click', () => saveTextContentModal());
+    document.getElementById('cancelTextBtnModal').addEventListener('click', () => cancelTextEditingModal());
+}
+
+// === AUTHENTICATION FUNCTIONS ===
+function initializeAuth() {
+    // Get token from storage
+    authToken = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+    
+    if (!authToken) {
+        // No token, redirect to login
+        redirectToLogin();
+        return;
+    }
+    
+    // Verify token with server
+    verifyAuthToken()
+        .then(isValid => {
+            if (!isValid) {
+                redirectToLogin();
+            } else {
+                // Continue with app initialization
+                setupAuthenticatedApp();
+            }
+        })
+        .catch(error => {
+            console.error('Auth verification error:', error);
+            redirectToLogin();
+        });
+}
+
+function verifyAuthToken() {
+    return fetch('/api/verify-token', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.valid) {
+            currentUser = data.user;
+            return true;
+        }
+        return false;
+    })
+    .catch(error => {
+        console.error('Token verification failed:', error);
+        return false;
+    });
+}
+
+function setupAuthenticatedApp() {
+    // Setup logout functionality
+    setupLogout();
+    
+    // Setup user info display
+    displayUserInfo();
+    
+    // Setup auto token refresh
+    setupTokenRefresh();
+    
+    // Add auth headers to all API requests
+    setupAuthenticatedRequests();
+    
+    // Initialize app after auth is verified
+    loadBooks();
+    loadFolders();
+    loadQuestions();
+    setupEventListeners();
+    setupJsonViewer();
+    setupPDFUpload();
+    loadJsonContent();
+}
+
+function setupLogout() {
+    // Get existing button from HTML
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+}
+
+function displayUserInfo() {
+    if (!currentUser) return;
+    
+    // Update existing elements in header
+    const userInfo = document.getElementById('userInfo');
+    const usernameDisplay = document.getElementById('usernameDisplay');
+    const userRoleDisplay = document.getElementById('userRoleDisplay');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    if (userInfo && usernameDisplay && userRoleDisplay && logoutBtn) {
+        usernameDisplay.textContent = currentUser.username;
+        userRoleDisplay.textContent = currentUser.role;
+        
+        // Show elements
+        userInfo.style.display = 'block';
+        logoutBtn.style.display = 'flex';
+    }
+}
+
+function setupTokenRefresh() {
+    // Refresh token every 30 minutes
+    setInterval(() => {
+        verifyAuthToken().then(isValid => {
+            if (!isValid) {
+                redirectToLogin();
+            }
+        });
+    }, 30 * 60 * 1000); // 30 minutes
+}
+
+function setupAuthenticatedRequests() {
+    // Override fetch to include auth headers
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options = {}) {
+        // Add auth header to all API requests
+        if (url.startsWith('/api/') && authToken) {
+            options.headers = options.headers || {};
+            options.headers['Authorization'] = `Bearer ${authToken}`;
+        }
+        
+        return originalFetch(url, options)
+            .then(response => {
+                // Handle auth errors
+                if (response.status === 401) {
+                    redirectToLogin();
+                    throw new Error('Authentication required');
+                }
+                return response;
+            });
+    };
+}
+
+function handleLogout() {
+    if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+        // Call logout API
+        fetch('/api/logout', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        })
+        .then(() => {
+            logout();
+        })
+        .catch(error => {
+            console.error('Logout error:', error);
+            logout(); // Force logout even if API fails
+        });
+    }
+}
+
+function logout() {
+    // Clear tokens
+    sessionStorage.removeItem('authToken');
+    localStorage.removeItem('authToken');
+    
+    // Clear user data
+    currentUser = null;
+    authToken = null;
+    
+    // Show logout message
+    showAlert('Đã đăng xuất thành công', 'success');
+    
+    // Redirect to login after short delay
+    setTimeout(() => {
+        redirectToLogin();
+    }, 1000);
+}
+
+function redirectToLogin() {
+    window.location.href = '/login';
 }
 
 // === PDF UPLOAD FUNCTIONS ===
@@ -272,6 +461,7 @@ function updateProcessingProgress(status) {
         progressText.textContent = `${stageText}: ${message}`;
     }
 }
+
 function handleProcessingComplete(status) {
     // Stop monitoring
     if (processingInterval) {
@@ -299,7 +489,6 @@ function handleProcessingComplete(status) {
             
             // Add option if not exists
             let optionExists = false;
-            // XÓA DÒNG TRÙNG LẶP: const newBookPath = `books_cropped/${status.book_name}`;
             for (let option of bookSelect.options) {
                 if (option.value === newBookPath) {
                     optionExists = true;
@@ -333,6 +522,7 @@ function handleProcessingComplete(status) {
         }
     }, 10000);
 }
+
 function handleProcessingError(status) {
     // Stop monitoring
     if (processingInterval) {
@@ -403,6 +593,7 @@ function loadBooks() {
             bookSelect.innerHTML = '<option value="cropped">Sách mặc định (cropped)</option>';
         });
 }
+
 function onBookChange() {
     const bookSelect = document.getElementById('bookSelect');
     currentBook = bookSelect.value;
@@ -472,9 +663,9 @@ function loadImagesFromFolder() {
     const selectedFolder = folderSelect.value;
     
     if (!selectedFolder) {
-        // Clear images grid
         const container = document.getElementById('imagesGrid');
         allImages = [];
+        hideTextContent();
         return;
     }
     
@@ -483,6 +674,7 @@ function loadImagesFromFolder() {
         .then(images => {
             allImages = images;
             renderImagesGrid('imagesGrid', false);
+            loadTextFromFolder(selectedFolder);
         })
         .catch(error => {
             console.error('Error loading images:', error);
@@ -493,6 +685,8 @@ function loadImagesFromFolder() {
 function loadImagesFromFolderForEdit(folderName) {
     if (!folderName) {
         const container = document.getElementById('editImagesGrid');
+        const textGroup = document.getElementById('editTextContentGroup');
+        textGroup.style.display = 'none';
         return;
     }
     
@@ -501,6 +695,7 @@ function loadImagesFromFolderForEdit(folderName) {
         .then(images => {
             allImages = images;
             renderImagesGrid('editImagesGrid', true);
+            loadTextFromFolderModal(folderName);
         })
         .catch(error => {
             console.error('Error loading images for edit:', error);
@@ -824,14 +1019,14 @@ function deleteQuestion(questionIndex) {
         })
         .then(response => response.json())
         .then(data => {
-                    if (data.success) {
-            showAlert('Xóa câu hỏi thành công!', 'success');
-            loadQuestions();
-            // Refresh JSON viewer
-            loadJsonContent();
-        } else {
-            showAlert('Lỗi khi xóa câu hỏi', 'error');
-        }
+            if (data.success) {
+                showAlert('Xóa câu hỏi thành công!', 'success');
+                loadQuestions();
+                // Refresh JSON viewer
+                loadJsonContent();
+            } else {
+                showAlert('Lỗi khi xóa câu hỏi', 'error');
+            }
         })
         .catch(error => {
             console.error('Error:', error);
@@ -977,46 +1172,12 @@ function closeImagePreview() {
     const modal = document.getElementById('imagePreviewModal');
     modal.style.display = 'none';
 }
+
+// Text Content Functions
 let currentTextContent = '';
 let currentTextFolder = '';
 let isEditingText = false;
 
-// Thêm vào hàm setupEventListeners()
-function setupEventListeners() {
-    // ... existing code ...
-    
-    // Text content editing
-    document.getElementById('editTextBtn').addEventListener('click', startTextEditing);
-    document.getElementById('saveTextBtn').addEventListener('click', saveTextContent);
-    document.getElementById('cancelTextBtn').addEventListener('click', cancelTextEditing);
-}
-
-// Sửa hàm loadImagesFromFolder()
-function loadImagesFromFolder() {
-    const folderSelect = document.getElementById('folderSelect');
-    const selectedFolder = folderSelect.value;
-    
-    if (!selectedFolder) {
-        const container = document.getElementById('imagesGrid');
-        allImages = [];
-        hideTextContent();
-        return;
-    }
-    
-    fetch(`/api/images/${selectedFolder}?book=${currentBook}`)
-        .then(response => response.json())
-        .then(images => {
-            allImages = images;
-            renderImagesGrid('imagesGrid', false);
-            loadTextFromFolder(selectedFolder);
-        })
-        .catch(error => {
-            console.error('Error loading images:', error);
-            showAlert('Lỗi khi tải ảnh từ folder', 'error');
-        });
-}
-
-// Text content functions
 function loadTextFromFolder(folderName) {
     currentTextFolder = folderName;
     
@@ -1128,32 +1289,6 @@ function cancelTextEditing() {
     saveBtn.style.display = 'none';
     cancelBtn.style.display = 'none';
 }
-// Thêm vào setupEventListeners()
-document.getElementById('editTextBtnModal').addEventListener('click', () => startTextEditingModal());
-document.getElementById('saveTextBtnModal').addEventListener('click', () => saveTextContentModal());
-document.getElementById('cancelTextBtnModal').addEventListener('click', () => cancelTextEditingModal());
-
-// Sửa hàm loadImagesFromFolderForEdit()
-function loadImagesFromFolderForEdit(folderName) {
-    if (!folderName) {
-        const container = document.getElementById('editImagesGrid');
-        const textGroup = document.getElementById('editTextContentGroup');
-        textGroup.style.display = 'none';
-        return;
-    }
-    
-    fetch(`/api/images/${folderName}?book=${currentBook}`)
-        .then(response => response.json())
-        .then(images => {
-            allImages = images;
-            renderImagesGrid('editImagesGrid', true);
-            loadTextFromFolderModal(folderName);
-        })
-        .catch(error => {
-            console.error('Error loading images for edit:', error);
-            showAlert('Lỗi khi tải ảnh cho edit', 'error');
-        });
-}
 
 function loadTextFromFolderModal(folderName) {
     fetch(`/api/text/${folderName}?book=${currentBook}`)
@@ -1178,414 +1313,18 @@ function loadTextFromFolderModal(folderName) {
             textGroup.style.display = 'none';
         });
 }
-// Authentication Middleware - Thêm vào đầu file script.js
 
-// Global auth state
-let currentUser = null;
-let authToken = null;
-
-// Initialize authentication on page load
-document.addEventListener('DOMContentLoaded', function() {
-    initializeAuth();
-    // ... existing initialization code
-});
-
-function initializeAuth() {
-    // Get token from storage
-    authToken = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
-    
-    if (!authToken) {
-        // No token, redirect to login
-        redirectToLogin();
-        return;
-    }
-    
-    // Verify token with server
-    verifyAuthToken()
-        .then(isValid => {
-            if (!isValid) {
-                redirectToLogin();
-            } else {
-                // Continue with app initialization
-                setupAuthenticatedApp();
-            }
-        })
-        .catch(error => {
-            console.error('Auth verification error:', error);
-            redirectToLogin();
-        });
+function startTextEditingModal() {
+    // Implementation for modal text editing
+    console.log('Start text editing in modal');
 }
 
-function verifyAuthToken() {
-    return fetch('/api/verify-token', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.valid) {
-            currentUser = data.user;
-            return true;
-        }
-        return false;
-    })
-    .catch(error => {
-        console.error('Token verification failed:', error);
-        return false;
-    });
+function saveTextContentModal() {
+    // Implementation for saving text in modal
+    console.log('Save text content in modal');
 }
 
-function setupAuthenticatedApp() {
-    // Setup logout functionality
-    setupLogout();
-    
-    // Setup user info display
-    displayUserInfo();
-    
-    // Setup auto token refresh
-    setupTokenRefresh();
-    
-    // Add auth headers to all API requests
-    setupAuthenticatedRequests();
-    
-    // Initialize app after auth is verified
-    loadBooks();
-    loadFolders();
-    loadQuestions();
-    setupEventListeners();
-    setupJsonViewer();
-    setupPDFUpload();
-    loadJsonContent();
+function cancelTextEditingModal() {
+    // Implementation for canceling text editing in modal
+    console.log('Cancel text editing in modal');
 }
-
-function setupLogout() {
-    // Add logout button if not exists
-    let logoutBtn = document.getElementById('logoutBtn');
-    if (!logoutBtn) {
-        logoutBtn = document.createElement('button');
-        logoutBtn.id = 'logoutBtn';
-        logoutBtn.className = 'logout-btn';
-        logoutBtn.innerHTML = `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
-            </svg>
-            Đăng xuất
-        `;
-        
-        // Add to header or appropriate location
-        const header = document.querySelector('header') || document.querySelector('.header') || document.body;
-        header.appendChild(logoutBtn);
-    }
-    
-    logoutBtn.addEventListener('click', handleLogout);
-}
-
-function displayUserInfo() {
-    if (!currentUser) return;
-    
-    // Add user info display
-    let userInfo = document.getElementById('userInfo');
-    if (!userInfo) {
-        userInfo = document.createElement('div');
-        userInfo.id = 'userInfo';
-        userInfo.className = 'user-info';
-        
-        const header = document.querySelector('header') || document.querySelector('.header') || document.body;
-        header.appendChild(userInfo);
-    }
-    
-    userInfo.innerHTML = `
-        <div class="user-details">
-            <span class="user-name">Xin chào, ${currentUser.username}</span>
-            <span class="user-role">(${currentUser.role})</span>
-        </div>
-    `;
-}
-
-function setupTokenRefresh() {
-    // Refresh token every 30 minutes
-    setInterval(() => {
-        verifyAuthToken().then(isValid => {
-            if (!isValid) {
-                redirectToLogin();
-            }
-        });
-    }, 30 * 60 * 1000); // 30 minutes
-}
-
-function setupAuthenticatedRequests() {
-    // Override fetch to include auth headers
-    const originalFetch = window.fetch;
-    window.fetch = function(url, options = {}) {
-        // Add auth header to all API requests
-        if (url.startsWith('/api/') && authToken) {
-            options.headers = options.headers || {};
-            options.headers['Authorization'] = `Bearer ${authToken}`;
-        }
-        
-        return originalFetch(url, options)
-            .then(response => {
-                // Handle auth errors
-                if (response.status === 401) {
-                    redirectToLogin();
-                    throw new Error('Authentication required');
-                }
-                return response;
-            });
-    };
-}
-
-function handleLogout() {
-    if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
-        // Call logout API
-        fetch('/api/logout', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            }
-        })
-        .then(() => {
-            logout();
-        })
-        .catch(error => {
-            console.error('Logout error:', error);
-            logout(); // Force logout even if API fails
-        });
-    }
-}
-
-function logout() {
-    // Clear tokens
-    sessionStorage.removeItem('authToken');
-    localStorage.removeItem('authToken');
-    
-    // Clear user data
-    currentUser = null;
-    authToken = null;
-    
-    // Show logout message
-    showAlert('Đã đăng xuất thành công', 'success');
-    
-    // Redirect to login after short delay
-    setTimeout(() => {
-        redirectToLogin();
-    }, 1000);
-}
-
-function redirectToLogin() {
-    window.location.href = '/login';
-}
-
-// CSS for auth components
-const authCSS = `
-.logout-btn {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-    backdrop-filter: blur(10px);
-}
-
-.logout-btn:hover {
-    background: linear-gradient(135deg, #ee5a52 0%, #e74c3c 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
-}
-
-.logout-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-}
-
-.logout-btn svg {
-    transition: transform 0.3s ease;
-}
-
-.logout-btn:hover svg {
-    transform: translateX(2px);
-}
-
-.user-info {
-    position: fixed;
-    top: 20px;
-    right: 180px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(15px);
-    padding: 12px 20px;
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    z-index: 999;
-    transition: all 0.3s ease;
-}
-
-.user-info:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-}
-
-.user-details {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-}
-
-.user-name {
-    font-weight: 700;
-    color: #2c3e50;
-    font-size: 14px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.user-role {
-    font-size: 11px;
-    color: #7f8c8d;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 500;
-    padding: 2px 8px;
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    color: white;
-    border-radius: 10px;
-    font-size: 10px;
-}
-
-/* Animation cho user info */
-@keyframes slideInFromRight {
-    from {
-        opacity: 0;
-        transform: translateX(100px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-.user-info {
-    animation: slideInFromRight 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.logout-btn {
-    animation: slideInFromRight 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-    .logout-btn {
-        top: 15px;
-        right: 15px;
-        padding: 8px 16px;
-        font-size: 12px;
-        border-radius: 20px;
-    }
-    
-    .user-info {
-        top: 15px;
-        right: 120px;
-        padding: 8px 15px;
-        border-radius: 15px;
-    }
-    
-    .user-name {
-        font-size: 12px;
-    }
-    
-    .user-role {
-        font-size: 9px;
-        padding: 2px 6px;
-    }
-}
-
-@media (max-width: 480px) {
-    .user-info {
-        position: relative;
-        top: auto;
-        right: auto;
-        margin: 10px;
-        display: inline-block;
-    }
-    
-    .logout-btn {
-        position: relative;
-        top: auto;
-        right: auto;
-        margin: 10px;
-        display: inline-block;
-    }
-    
-    .user-details {
-        align-items: center;
-        text-align: center;
-    }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .user-info {
-        background: rgba(44, 62, 80, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .user-name {
-        color: #ecf0f1;
-    }
-}
-
-/* Hover effects cho mobile */
-@media (hover: none) {
-    .logout-btn:hover {
-        transform: none;
-    }
-    
-    .user-info:hover {
-        transform: none;
-    }
-}
-`;
-function displayUserInfo() {
-    if (!currentUser) return;
-    
-    // Add user info display
-    let userInfo = document.getElementById('userInfo');
-    if (!userInfo) {
-        userInfo = document.createElement('div');
-        userInfo.id = 'userInfo';
-        userInfo.className = 'user-info';
-        
-        const header = document.querySelector('header') || document.querySelector('.header') || document.body;
-        header.appendChild(userInfo);
-    }
-    
-    userInfo.innerHTML = `
-        <div class="user-details">
-            <span class="user-name">👋 Xin chào, ${currentUser.username}</span>
-            <span class="user-role">${currentUser.role}</span>
-        </div>
-    `;
-}
-
-// Inject auth CSS
-const authStyle = document.createElement('style');
-authStyle.textContent = authCSS;
-document.head.appendChild(authStyle);
