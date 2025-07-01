@@ -3,196 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Câu hỏi</title>
+    <title>PDF Processing Application</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 </head>
 <body>
     <div class="container">
-        <!-- Header with integrated user info and logout -->
+        <!-- Header -->
         <div class="header">
             <div class="header-content">
                 <div class="header-main">
-                    <h1>Công Cụ Xử Lý Data PDF</h1>
-                    <div class="nav-tabs">
-                        <button id="uploadPDFBtn" class="tab-btn">📤 Upload PDF</button>
-                        <a href="/gallery" class="tab-btn">🖼️ View Gallery</a>
-                    </div>
+                    <h1>📚 PDF Processing & Question Manager</h1>
+                    <p>Xử lý PDF và quản lý câu hỏi thông minh</p>
                 </div>
-                
                 <div class="header-auth">
                     <div id="userInfo" class="user-info-header" style="display: none;">
                         <div class="user-details-header">
-                            <span class="user-name-header">👋 Xin chào, <span id="usernameDisplay"></span></span>
-                            <span class="user-role-header" id="userRoleDisplay"></span>
+                            <div id="usernameDisplay" class="user-name-header"></div>
+                            <div id="userRoleDisplay" class="user-role-header"></div>
                         </div>
                     </div>
                     <button id="logoutBtn" class="logout-btn-header" style="display: none;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
+                            <path d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
                         </svg>
                         Đăng xuất
                     </button>
                 </div>
             </div>
+
+            <!-- Navigation Tabs -->
+            <div class="nav-tabs">
+                <button class="tab-btn active" onclick="showTab('mapping')">📝 Mapping Questions</button>
+                <button class="tab-btn" onclick="showTab('upload')">📤 Upload PDF</button>
+                <button class="tab-btn" onclick="showTab('gallery')">🖼️ Gallery</button>
+            </div>
         </div>
+
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
 
         <!-- Main Content -->
         <div class="main-content-3col">
             <!-- Form Section -->
             <div class="form-section">
-                <h2 class="section-title">Thêm Câu Hỏi Mới</h2>
+                <div class="section-title">📝 Thêm Câu Hỏi Mới</div>
                 
                 <!-- Book Selection -->
                 <div class="form-group">
-                    <label for="bookSelect">Chọn sách:</label>
+                    <label for="bookSelect">📚 Chọn sách:</label>
                     <select id="bookSelect" class="book-select" onchange="onBookChange()">
-                        <option value="cropped">Sách mặc định (cropped)</option>
+                        <option value="">Đang tải...</option>
                     </select>
                 </div>
-                
+
+                <!-- Folder Selection -->
+                <div class="form-group">
+                    <label for="folderSelect">📁 Chọn folder ảnh:</label>
+                    <select id="folderSelect" class="folder-select" onchange="loadImagesFromFolder()">
+                        <option value="">-- Chọn folder ảnh --</option>
+                    </select>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <div class="quick-actions-title">⚡ Quick Actions cho Images</div>
+                    <div class="quick-actions-buttons">
+                        <button onclick="showFullSizeImages()" class="quick-btn" title="Hiển thị ảnh full size để thấy toàn bộ nội dung">
+                            🖼️ Full Size
+                        </button>
+                        <button onclick="fitAllImages()" class="quick-btn" title="Vừa khít với khung hiển thị">
+                            🔍 Fit All
+                        </button>
+                        <button onclick="showCompactImages()" class="quick-btn" title="Hiển thị gọn để xem nhiều ảnh">
+                            📱 Compact
+                        </button>
+                        <button onclick="setImageViewMode('auto-height')" class="quick-btn" title="Chiều cao tự động theo nội dung ảnh">
+                            📏 Auto Height
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Helper Text -->
+                <div class="helper-text">
+                    💡 <strong>Hướng dẫn sử dụng:</strong>
+                    <ul>
+                        <li>Click ảnh để chọn cho câu hỏi/đáp án</li>
+                        <li>Ctrl+Click để xem preview ảnh lớn</li>
+                        <li>Phím tắt: 1=Auto Height, 2=Fixed, 3=Adaptive</li>
+                        <li>Ctrl+F để Fit All, Ctrl +/- để thay đổi kích thước</li>
+                    </ul>
+                </div>
+
+                <!-- Images Grid -->
+                <div id="imagesGrid" class="images-grid"></div>
+
+                <!-- Text Content Display -->
+                <div id="textContentGroup" style="display: none;">
+                    <div class="text-content-header">
+                        <h4>📄 Nội dung Text:</h4>
+                        <div>
+                            <button id="editTextBtn" class="btn btn-small">✏️ Sửa</button>
+                            <button id="saveTextBtn" class="btn btn-small" style="display: none;">💾 Lưu</button>
+                            <button id="cancelTextBtn" class="btn btn-small" style="display: none;">❌ Hủy</button>
+                        </div>
+                    </div>
+                    <div id="textDisplay" class="text-display"></div>
+                    <textarea id="textEditor" class="text-editor" style="display: none;"></textarea>
+                </div>
+
+                <!-- Selection Controls -->
+                <div class="selection-buttons">
+                    <button id="selectQuestionMode" class="btn btn-success">🔵 Chọn ảnh câu hỏi</button>
+                    <button id="selectAnswerMode" class="btn btn-warning">🟠 Chọn ảnh đáp án</button>
+                    <button id="clearSelection" class="btn btn-secondary">🗑️ Xóa chọn</button>
+                </div>
+
+                <!-- Question Form -->
                 <form id="questionForm">
                     <div class="form-group">
-                        <label for="subject">Môn học:</label>
-                        <input type="text" id="subject" name="subject" required>
+                        <label for="subject">📖 Môn học:</label>
+                        <input type="text" id="subject" name="subject" placeholder="Ví dụ: Toán học">
                     </div>
 
                     <div class="form-group">
-                        <label for="chapter">Chương:</label>
-                        <input type="text" id="chapter" name="chapter" required>
+                        <label for="chapter">📑 Chương:</label>
+                        <input type="text" id="chapter" name="chapter" placeholder="Ví dụ: Chương 1">
                     </div>
 
                     <div class="form-group">
-                        <label for="lesson">Bài học:</label>
-                        <input type="text" id="lesson" name="lesson" required>
+                        <label for="lesson">📄 Bài học:</label>
+                        <input type="text" id="lesson" name="lesson" placeholder="Ví dụ: Bài 1">
                     </div>
 
                     <div class="form-group">
-                        <label for="difficulty">Độ khó:</label>
-                        <select id="difficulty" name="difficulty" required>
+                        <label for="question">❓ Câu hỏi:</label>
+                        <textarea id="question" name="question" placeholder="Nhập câu hỏi..." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="answer">✅ Đáp án:</label>
+                        <textarea id="answer" name="answer" placeholder="Nhập đáp án..." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="difficulty">🎚️ Độ khó:</label>
+                        <select id="difficulty" name="difficulty">
                             <option value="easy">Dễ</option>
                             <option value="medium">Trung bình</option>
                             <option value="hard">Khó</option>
+                            <option value="very_hard">Rất khó</option>
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="question">Câu hỏi:</label>
-                        <textarea id="question" name="question" required></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="answer">Đáp án:</label>
-                        <textarea id="answer" name="answer" required></textarea>
-                    </div>
-
-                    <!-- Folder Selection -->
-                    <div class="form-group">
-                        <label for="folderSelect">Chọn folder ảnh:</label>
-                        <select id="folderSelect" class="folder-select" onchange="loadImagesFromFolder()">
-                            <option value="">-- Chọn folder ảnh --</option>
-                        </select>
-                    </div>
-                    <!-- Text Content Display -->
-                    <div class="form-group" id="textContentGroup" style="display: none;">
-                        <label for="textContent">Nội dung ocr:</label>
-                        <div class="text-content-header">
-                            <button type="button" id="editTextBtn" class="btn btn-secondary btn-small">Chỉnh sửa</button>
-                            <button type="button" id="saveTextBtn" class="btn btn-success btn-small" style="display: none;">Lưu</button>
-                            <button type="button" id="cancelTextBtn" class="btn btn-secondary btn-small" style="display: none;">Hủy</button>
-                        </div>
-                        <div id="textDisplay" class="text-display"></div>
-                        <textarea id="textEditor" class="text-editor" style="display: none;"></textarea>
-                    </div>
-
-                    <!-- Image Selection Controls -->
-                    <div class="form-group">
-                        <label>Chọn hình ảnh:</label>
-                        <div class="selection-buttons">
-                            <button type="button" id="selectQuestionMode" class="btn btn-success">Chọn ảnh Câu hỏi</button>
-                            <button type="button" id="selectAnswerMode" class="btn btn-warning">Chọn ảnh Đáp án</button>
-                            <button type="button" id="clearSelection" class="btn btn-secondary">Xóa chọn</button>
-                        </div>
-                        
-                        <!-- Images Grid -->
-                        <div id="imagesGrid" class="images-grid">
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Thêm Câu hỏi</button>
+                    <button type="submit" class="btn btn-primary">➕ Thêm câu hỏi</button>
                 </form>
+
+                
             </div>
 
             <!-- Questions List Section -->
             <div class="questions-section">
-                <h2 class="section-title">Danh Sách Câu Hỏi</h2>
+                <div class="section-title">📋 Danh Sách Câu Hỏi</div>
                 <div id="questionsList" class="questions-list"></div>
             </div>
 
             <!-- JSON Viewer Section -->
             <div class="json-viewer-section">
                 <div class="json-header">
-                    <h2 class="section-title">Json Editor</h2>
+                    <div class="section-title">🔧 JSON Editor</div>
                     <div class="json-controls">
-                        <button id="loadJsonBtn" class="btn btn-primary">Tải JSON</button>
-                        <button id="saveJsonBtn" class="btn btn-success">Lưu JSON</button>
+                        <button id="loadJsonBtn" class="btn btn-primary">📥 Tải JSON</button>
+                        <button id="saveJsonBtn" class="btn btn-success">💾 Lưu JSON</button>
+                        <button onclick="formatJson()" class="btn btn-secondary">🎨 Format</button>
+                        <button onclick="validateJson()" class="btn btn-warning">✅ Validate</button>
                     </div>
                 </div>
                 
+                <div class="json-stats">
+                    <div class="json-stats-text">
+                        💡 Chỉnh sửa trực tiếp file JSON mapping. Nhớ validate trước khi lưu!
+                    </div>
+                </div>
                 
                 <div class="json-editor-container">
-                    <textarea id="jsonEditor" class="json-editor" placeholder="Nội dung JSON sẽ hiển thị ở đây..."></textarea>
+                    <textarea id="jsonEditor" class="json-editor" placeholder="JSON content sẽ hiển thị ở đây..."></textarea>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Upload PDF Modal -->
-    <div id="uploadModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>📤 Upload và Xử lý PDF</h2>
-            
-            <form id="uploadForm" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="pdfFile">Chọn file PDF:</label>
-                    <input type="file" id="pdfFile" name="pdf_file" accept=".pdf" required>
-                    
-                    <div id="fileInfo" class="file-info" style="display: none;">
-                        <p><strong>Tên file:</strong> <span id="fileName"></span></p>
-                        <p><strong>Kích thước:</strong> <span id="fileSize"></span></p>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="bookName">Tên sách:</label>
-                    <input type="text" id="bookName" name="book_name" placeholder="Ví dụ: toan-lop-1" pattern="[a-zA-Z0-9_-]+" required>
-                    <small>Chỉ sử dụng chữ cái, số, dấu gạch dưới (_) và gạch ngang (-)</small>
-                </div>
-
-                <!-- Progress Bar -->
-                <div id="uploadProgress" class="upload-progress" style="display: none;">
-                    <div class="progress-bar-container">
-                        <div id="progressBar" class="progress-bar"></div>
-                    </div>
-                    <div id="progressText" class="progress-text">Đang upload...</div>
-                </div>
-
-                <div class="upload-info">
-                    <h3>Quá trình xử lý bao gồm:</h3>
-                    <ol>
-                        <li>📄 Chuyển đổi PDF thành ảnh (300 DPI)</li>
-                        <li>🤖 YOLO detection để tách câu hỏi và đáp án</li>
-                        <li>🔍 OCR để nhận diện text từ ảnh</li>
-                    </ol>
-                    <p><strong>Lưu ý:</strong> File PDF tối đa 100MB. Quá trình xử lý có thể mất vài phút tùy thuộc vào số trang.</p>
-                </div>
-
-                <div class="modal-buttons">
-                    <button type="submit" id="submitUpload" class="btn btn-primary">Bắt đầu xử lý</button>
-                    <button type="button" id="cancelUpload" class="btn btn-secondary">Hủy</button>
-                </div>
-            </form>
         </div>
     </div>
 
@@ -200,79 +198,85 @@
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>Chỉnh sửa Câu hỏi</h2>
+            <h2>✏️ Chỉnh sửa câu hỏi</h2>
             
+            <div class="form-group">
+                <label for="editFolderSelect">📁 Chọn folder ảnh:</label>
+                <select id="editFolderSelect" class="folder-select" onchange="loadImagesFromFolderForEdit(this.value)">
+                    <option value="">-- Chọn folder ảnh --</option>
+                </select>
+            </div>
+
+            <!-- Quick Actions for Edit Modal -->
+            <div class="quick-actions">
+                <div class="quick-actions-title">⚡ Quick View</div>
+                <div class="quick-actions-buttons">
+                    <button onclick="showFullSizeImages()" class="quick-btn">🖼️ Full</button>
+                    <button onclick="fitAllImages()" class="quick-btn">🔍 Fit</button>
+                    <button onclick="showCompactImages()" class="quick-btn">📱 Compact</button>
+                </div>
+            </div>
+
+            <div id="editImagesGrid" class="images-grid"></div>
+
+            <!-- Text Content Display for Edit -->
+            <div id="editTextContentGroup" style="display: none;">
+                <div class="text-content-header">
+                    <h4>📄 Nội dung Text:</h4>
+                    <div>
+                        <button id="editTextBtnModal" class="btn btn-small">✏️ Sửa</button>
+                        <button id="saveTextBtnModal" class="btn btn-small" style="display: none;">💾 Lưu</button>
+                        <button id="cancelTextBtnModal" class="btn btn-small" style="display: none;">❌ Hủy</button>
+                    </div>
+                </div>
+                <div id="editTextDisplay" class="text-display"></div>
+            </div>
+
+            <div class="selection-buttons">
+                <button id="editSelectQuestionMode" class="btn btn-success">🔵 Chọn ảnh câu hỏi</button>
+                <button id="editSelectAnswerMode" class="btn btn-warning">🟠 Chọn ảnh đáp án</button>
+                <button id="editClearSelection" class="btn btn-secondary">🗑️ Xóa chọn</button>
+            </div>
+
             <form id="editForm">
                 <div class="form-group">
-                    <label for="editSubject">Môn học:</label>
-                    <input type="text" id="editSubject" name="subject" required>
+                    <label for="editSubject">📖 Môn học:</label>
+                    <input type="text" id="editSubject" name="subject">
                 </div>
 
                 <div class="form-group">
-                    <label for="editChapter">Chương:</label>
-                    <input type="text" id="editChapter" name="chapter" required>
+                    <label for="editChapter">📑 Chương:</label>
+                    <input type="text" id="editChapter" name="chapter">
                 </div>
 
                 <div class="form-group">
-                    <label for="editLesson">Bài học:</label>
-                    <input type="text" id="editLesson" name="lesson" required>
+                    <label for="editLesson">📄 Bài học:</label>
+                    <input type="text" id="editLesson" name="lesson">
                 </div>
 
                 <div class="form-group">
-                    <label for="editDifficulty">Độ khó:</label>
-                    <select id="editDifficulty" name="difficulty" required>
+                    <label for="editQuestion">❓ Câu hỏi:</label>
+                    <textarea id="editQuestion" name="question" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="editAnswer">✅ Đáp án:</label>
+                    <textarea id="editAnswer" name="answer" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="editDifficulty">🎚️ Độ khó:</label>
+                    <select id="editDifficulty" name="difficulty">
                         <option value="easy">Dễ</option>
                         <option value="medium">Trung bình</option>
                         <option value="hard">Khó</option>
+                        <option value="very_hard">Rất khó</option>
                     </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="editQuestion">Câu hỏi:</label>
-                    <textarea id="editQuestion" name="question" required></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="editAnswer">Đáp án:</label>
-                    <textarea id="editAnswer" name="answer" required></textarea>
-                </div>
-
-                <!-- Edit Folder Selection -->
-                <div class="form-group">
-                    <label for="editFolderSelect">Chọn folder ảnh:</label>
-                    <select id="editFolderSelect" class="folder-select" onchange="loadImagesFromFolderForEdit(this.value)">
-                        <option value="">-- Chọn folder ảnh --</option>
-                    </select>
-                </div>
-                <div class="form-group" id="editTextContentGroup" style="display: none;">
-                    <label for="editTextContent">Nội dung text.txt:</label>
-                    <div class="text-content-header">
-                        <button type="button" id="editTextBtnModal" class="btn btn-secondary btn-small">Chỉnh sửa</button>
-                        <button type="button" id="saveTextBtnModal" class="btn btn-success btn-small" style="display: none;">Lưu</button>
-                        <button type="button" id="cancelTextBtnModal" class="btn btn-secondary btn-small" style="display: none;">Hủy</button>
-                    </div>
-                    <div id="editTextDisplay" class="text-display"></div>
-                    <textarea id="editTextEditor" class="text-editor" style="display: none;"></textarea>
-                </div>
-
-                <!-- Edit Image Selection Controls -->
-                <div class="form-group">
-                    <label>Chọn hình ảnh:</label>
-                    <div class="selection-buttons">
-                        <button type="button" id="editSelectQuestionMode" class="btn btn-success">Chọn ảnh Câu hỏi</button>
-                        <button type="button" id="editSelectAnswerMode" class="btn btn-warning">Chọn ảnh Đáp án</button>
-                        <button type="button" id="editClearSelection" class="btn btn-secondary">Xóa chọn</button>
-                    </div>
-                    
-                    <!-- Edit Images Grid -->
-                    <div id="editImagesGrid" class="images-grid">
-                        <p class="no-images">Vui lòng chọn folder ảnh</p>
-                    </div>
                 </div>
 
                 <div class="modal-buttons">
-                    <button type="submit" class="btn btn-primary">Cập nhật</button>
-                    <button type="button" id="cancelEdit" class="btn btn-secondary">Hủy</button>
+                    <button type="submit" class="btn btn-primary">💾 Cập nhật</button>
+                    <button type="button" id="cancelEdit" class="btn btn-secondary">❌ Hủy</button>
                 </div>
             </form>
         </div>
@@ -283,7 +287,7 @@
         <div class="modal-content image-preview-modal">
             <span class="close">&times;</span>
             <div class="image-preview-container">
-                <img id="previewImage" src="" alt="Preview">
+                <img id="previewImage" alt="Image Preview">
                 <div class="image-info">
                     <p id="imagePath"></p>
                 </div>
@@ -291,9 +295,165 @@
         </div>
     </div>
 
-    <!-- Alert Container -->
-    <div id="alertContainer"></div>
+    <!-- Upload PDF Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>📤 Upload PDF</h2>
+            
+            <div class="upload-info">
+                <h3>📋 Quy trình xử lý:</h3>
+                <ol>
+                    <li>Chuyển đổi PDF thành ảnh</li>
+                    <li>YOLO Detection để tìm câu hỏi/đáp án</li>
+                    <li>Crop và lưu ảnh</li>
+                    <li>OCR để trích xuất text</li>
+                    <li>Tạo cấu trúc folder và file</li>
+                </ol>
+                <p><strong>Lưu ý:</strong> Quá trình có thể mất vài phút tùy theo kích thước file.</p>
+            </div>
 
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label for="pdfFile">📄 Chọn file PDF:</label>
+                    <input type="file" id="pdfFile" name="pdf_file" accept=".pdf" required>
+                </div>
+
+                <div id="fileInfo" class="file-info" style="display: none;">
+                    <p><strong>📄 Tên file:</strong> <span id="fileName"></span></p>
+                    <p><strong>💾 Kích thước:</strong> <span id="fileSize"></span></p>
+                </div>
+
+                <div class="form-group">
+                    <label for="bookName">📚 Tên sách:</label>
+                    <input type="text" id="bookName" name="book_name" 
+                           placeholder="Ví dụ: toan_lop_6" 
+                           pattern="[a-zA-Z0-9_-]+" 
+                           title="Chỉ được sử dụng chữ cái, số, dấu gạch dưới và gạch ngang"
+                           required>
+                    <small>Chỉ được sử dụng chữ cái, số, dấu gạch dưới (_) và gạch ngang (-)</small>
+                </div>
+
+                <div id="uploadProgress" class="upload-progress" style="display: none;">
+                    <div class="progress-bar-container">
+                        <div id="progressBar" class="progress-bar"></div>
+                    </div>
+                    <div id="progressText" class="progress-text">Đang upload...</div>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="submit" id="submitUpload" class="btn btn-primary">🚀 Bắt đầu xử lý</button>
+                    <button type="button" id="cancelUpload" class="btn btn-secondary">❌ Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    
+    <!-- Auto-apply preferences and additional scripts -->
+    <script>
+        // Auto-apply preferences khi load trang
+        document.addEventListener('DOMContentLoaded', function() {
+            // Delay để đảm bảo các elements đã được render
+            setTimeout(function() {
+                if (window.currentImageViewMode) {
+                    setImageViewMode(window.currentImageViewMode);
+                }
+                if (window.currentImageGridSize) {
+                    setImageGridSize(window.currentImageGridSize);
+                }
+            }, 500);
+        });
+
+        // Tab switching functionality
+        function showTab(tabName) {
+            // Update active tab button
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Show relevant content based on tab
+            switch(tabName) {
+                case 'mapping':
+                    // Already the main view, nothing to change
+                    break;
+                case 'upload':
+                    showUploadModal();
+                    break;
+                case 'gallery':
+                    window.open('/gallery', '_blank');
+                    break;
+            }
+        }
+
+        // Enhanced error handling
+        window.addEventListener('error', function(e) {
+            console.error('JavaScript Error:', e.error);
+            showAlert('Có lỗi JavaScript xảy ra. Vui lòng refresh trang.', 'error');
+        });
+
+        // Enhanced image loading
+        document.addEventListener('imagesLoaded', function() {
+            console.log('Images loaded, applying preferences...');
+            
+            // Apply current view mode to all new images
+            setTimeout(() => {
+                if (window.currentImageViewMode) {
+                    setImageViewMode(window.currentImageViewMode);
+                }
+                if (window.currentImageGridSize) {
+                    setImageGridSize(window.currentImageGridSize);
+                }
+            }, 100);
+        });
+
+        // Performance monitoring
+        let imageLoadTimes = [];
+        
+        function trackImageLoadTime(startTime, imagePath) {
+            const loadTime = performance.now() - startTime;
+            imageLoadTimes.push({ path: imagePath, time: loadTime });
+            
+            // Log slow loading images
+            if (loadTime > 2000) {
+                console.warn(`Slow image load: ${imagePath} took ${loadTime.toFixed(2)}ms`);
+            }
+        }
+
+        // Auto-save preferences
+        setInterval(function() {
+            if (window.currentImageViewMode && window.currentImageGridSize) {
+                localStorage.setItem('imageViewMode', window.currentImageViewMode);
+                localStorage.setItem('imageGridSize', window.currentImageGridSize);
+            }
+        }, 30000); // Save every 30 seconds
+
+        // Debug mode toggle
+        let debugMode = localStorage.getItem('debugMode') === 'true';
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                debugMode = !debugMode;
+                localStorage.setItem('debugMode', debugMode);
+                
+                if (debugMode) {
+                    showAlert('Debug mode ON - Chi tiết log sẽ hiển thị trong console', 'success');
+                    console.log('Debug info:', {
+                        currentBook,
+                        currentImageViewMode,
+                        currentImageGridSize,
+                        selectedQuestionImages,
+                        selectedAnswerImages,
+                        allImages
+                    });
+                } else {
+                    showAlert('Debug mode OFF', 'success');
+                }
+            }
+        });
+    </script>
 </body>
 </html>

@@ -12,6 +12,10 @@ let processingInterval = null;
 let currentUser = null;
 let authToken = null;
 
+// Images Grid Enhancement Variables
+let currentImageViewMode = 'auto-height';
+let currentImageGridSize = 'medium';
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', function() {
     initializeAuth(); // Khởi tạo auth trước
@@ -83,6 +87,18 @@ function setupEventListeners() {
     document.getElementById('editTextBtnModal').addEventListener('click', () => startTextEditingModal());
     document.getElementById('saveTextBtnModal').addEventListener('click', () => saveTextContentModal());
     document.getElementById('cancelTextBtnModal').addEventListener('click', () => cancelTextEditingModal());
+    
+    // Load image preferences
+    loadImagePreferences();
+    
+    // Apply saved preferences when images are loaded
+    document.addEventListener('imagesLoaded', function() {
+        setImageViewMode(currentImageViewMode);
+        setImageGridSize(currentImageGridSize);
+    });
+
+    // Keyboard shortcuts
+    setupKeyboardShortcuts();
 }
 
 // === AUTHENTICATION FUNCTIONS ===
@@ -258,10 +274,225 @@ function redirectToLogin() {
     window.location.href = '/login';
 }
 
+// === IMAGES GRID ENHANCEMENT FUNCTIONS ===
+
+function ensureImagesToolbar(container) {
+    // Check if toolbar already exists
+    if (container.previousElementSibling?.classList.contains('images-toolbar')) {
+        return;
+    }
+
+    // Create toolbar
+    const toolbar = document.createElement('div');
+    toolbar.className = 'images-toolbar';
+    
+    toolbar.innerHTML = `
+        <div class="view-mode-buttons">
+            <button class="view-mode-btn ${currentImageViewMode === 'auto-height' ? 'active' : ''}" 
+                    onclick="setImageViewMode('auto-height')" title="Chiều cao tự động - hiển thị full content">
+                📏 Auto Height
+            </button>
+            <button class="view-mode-btn ${currentImageViewMode === 'fixed-contain' ? 'active' : ''}" 
+                    onclick="setImageViewMode('fixed-contain')" title="Chiều cao cố định - gọn gàng">
+                📐 Fixed Height
+            </button>
+            <button class="view-mode-btn ${currentImageViewMode === 'adaptive' ? 'active' : ''}" 
+                    onclick="setImageViewMode('adaptive')" title="Chiều cao thích ứng - cân bằng">
+                🔧 Adaptive
+            </button>
+        </div>
+        
+        <div class="grid-size-controls">
+            <span>Kích thước:</span>
+            <select class="grid-size-select" onchange="setImageGridSize(this.value)">
+                <option value="small" ${currentImageGridSize === 'small' ? 'selected' : ''}>Nhỏ</option>
+                <option value="medium" ${currentImageGridSize === 'medium' ? 'selected' : ''}>Vừa</option>
+                <option value="large" ${currentImageGridSize === 'large' ? 'selected' : ''}>Lớn</option>
+                <option value="xlarge" ${currentImageGridSize === 'xlarge' ? 'selected' : ''}>Rất lớn</option>
+            </select>
+        </div>
+        
+        <div class="toolbar-info">
+            💡 Ctrl+Click để xem preview
+        </div>
+    `;
+
+    container.parentNode.insertBefore(toolbar, container);
+}
+
+function setImageViewMode(mode) {
+    currentImageViewMode = mode;
+    
+    // Update all images
+    document.querySelectorAll('.images-grid img').forEach(img => {
+        img.classList.remove('auto-height', 'fixed-contain', 'adaptive');
+        img.classList.add(mode);
+    });
+
+    // Update button states
+    document.querySelectorAll('.view-mode-btn').forEach(btn => {
+        const btnMode = btn.getAttribute('onclick').match(/'([^']+)'/)[1];
+        btn.classList.toggle('active', btnMode === mode);
+    });
+
+    // Save preference
+    localStorage.setItem('imageViewMode', mode);
+    
+    // Show feedback
+    const modeNames = {
+        'auto-height': 'Auto Height - Full Content',
+        'fixed-contain': 'Fixed Height - Compact',
+        'adaptive': 'Adaptive - Balanced'
+    };
+    
+    showAlert(`Chế độ hiển thị: ${modeNames[mode]}`, 'success');
+}
+
+function setImageGridSize(size) {
+    currentImageGridSize = size;
+    
+    // Update all grids
+    document.querySelectorAll('.images-grid').forEach(grid => {
+        grid.classList.remove('size-small', 'size-medium', 'size-large', 'size-xlarge');
+        grid.classList.add(`size-${size}`);
+    });
+
+    // Save preference
+    localStorage.setItem('imageGridSize', size);
+}
+
+// Quick action functions
+function fitAllImages() {
+    setImageViewMode('adaptive');
+    setImageGridSize('medium');
+    showAlert('Fit All Images - Chế độ xem tối ưu', 'success');
+}
+
+function showFullSizeImages() {
+    setImageViewMode('auto-height');
+    setImageGridSize('xlarge');
+    showAlert('Full Size Images - Hiển thị ảnh full content', 'success');
+}
+
+function showCompactImages() {
+    setImageViewMode('fixed-contain');
+    setImageGridSize('small');
+    showAlert('Compact Images - Hiển thị gọn', 'success');
+}
+
+// Load saved preferences
+function loadImagePreferences() {
+    const savedViewMode = localStorage.getItem('imageViewMode');
+    const savedGridSize = localStorage.getItem('imageGridSize');
+    
+    if (savedViewMode) {
+        currentImageViewMode = savedViewMode;
+    }
+    if (savedGridSize) {
+        currentImageGridSize = savedGridSize;
+    }
+}
+
+// Setup keyboard shortcuts
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Chỉ hoạt động khi không focus vào input/textarea
+        if (document.activeElement.tagName === 'INPUT' || 
+            document.activeElement.tagName === 'TEXTAREA') {
+            return;
+        }
+        
+        switch(e.key) {
+            case '1':
+                setImageViewMode('auto-height');
+                break;
+            case '2':
+                setImageViewMode('fixed-contain');
+                break;
+            case '3':
+                setImageViewMode('adaptive');
+                break;
+            case 'f':
+            case 'F':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    fitAllImages();
+                }
+                break;
+            case '+':
+            case '=':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    const sizes = ['small', 'medium', 'large', 'xlarge'];
+                    const currentIndex = sizes.indexOf(currentImageGridSize);
+                    if (currentIndex < sizes.length - 1) {
+                        setImageGridSize(sizes[currentIndex + 1]);
+                    }
+                }
+                break;
+            case '-':
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    const sizes = ['small', 'medium', 'large', 'xlarge'];
+                    const currentIndex = sizes.indexOf(currentImageGridSize);
+                    if (currentIndex > 0) {
+                        setImageGridSize(sizes[currentIndex - 1]);
+                    }
+                }
+                break;
+        }
+    });
+}
+
+// === ENHANCED RENDER IMAGES GRID ===
+function renderImagesGrid(containerId, isEdit = false) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    // Add enhanced classes
+    container.classList.add(`size-${currentImageGridSize}`);
+
+    allImages.forEach(imagePath => {
+        const imageItem = document.createElement('div');
+        imageItem.className = 'image-item';
+        imageItem.dataset.path = imagePath;
+
+        const img = document.createElement('img');
+        img.src = `/images/${currentBook}/${imagePath}`;
+        img.alt = imagePath;
+        img.className = currentImageViewMode; // Apply current view mode
+
+        // Add image info
+        const imageInfo = document.createElement('div');
+        imageInfo.className = 'image-info';
+        imageInfo.innerHTML = `<div class="image-name">${imagePath.split('/').pop()}</div>`;
+
+        imageItem.appendChild(img);
+        imageItem.appendChild(imageInfo);
+        
+        // Add selection click handler (giữ nguyên logic hiện tại)
+        imageItem.addEventListener('click', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                showImagePreview(imagePath);
+            } else {
+                handleImageClick(imagePath, isEdit);
+            }
+        });
+
+        container.appendChild(imageItem);
+    });
+
+    updateImageSelection(isEdit);
+    
+    // Ensure toolbar exists
+    ensureImagesToolbar(container);
+    
+    // Trigger custom event for image loading
+    document.dispatchEvent(new CustomEvent('imagesLoaded'));
+}
+
 // === PDF UPLOAD FUNCTIONS ===
 function setupPDFUpload() {
-    // Upload button click
-    document.getElementById('uploadPDFBtn').addEventListener('click', showUploadModal);
     
     // Upload form submission
     document.getElementById('uploadForm').addEventListener('submit', handlePDFUpload);
@@ -675,6 +906,9 @@ function loadImagesFromFolder() {
             allImages = images;
             renderImagesGrid('imagesGrid', false);
             loadTextFromFolder(selectedFolder);
+            
+            // Trigger custom event for image loading
+            document.dispatchEvent(new CustomEvent('imagesLoaded'));
         })
         .catch(error => {
             console.error('Error loading images:', error);
@@ -696,43 +930,17 @@ function loadImagesFromFolderForEdit(folderName) {
             allImages = images;
             renderImagesGrid('editImagesGrid', true);
             loadTextFromFolderModal(folderName);
+            
+            // Apply preferences to edit modal
+            setTimeout(() => {
+                setImageViewMode(currentImageViewMode);
+                setImageGridSize(currentImageGridSize);
+            }, 100);
         })
         .catch(error => {
             console.error('Error loading images for edit:', error);
             showAlert('Lỗi khi tải ảnh cho edit', 'error');
         });
-}
-
-function renderImagesGrid(containerId, isEdit = false) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = '';
-
-    allImages.forEach(imagePath => {
-        const imageItem = document.createElement('div');
-        imageItem.className = 'image-item';
-        imageItem.dataset.path = imagePath;
-
-        const img = document.createElement('img');
-        img.src = `/images/${currentBook}/${imagePath}`;
-        img.alt = imagePath;
-
-        imageItem.appendChild(img);
-        
-        // Add selection click handler
-        imageItem.addEventListener('click', (e) => {
-            if (e.ctrlKey || e.metaKey) {
-                // Ctrl/Cmd click for image preview
-                showImagePreview(imagePath);
-            } else {
-                // Normal click for selection
-                handleImageClick(imagePath, isEdit);
-            }
-        });
-
-        container.appendChild(imageItem);
-    });
-
-    updateImageSelection(isEdit);
 }
 
 function handleImageClick(imagePath, isEdit = false) {
