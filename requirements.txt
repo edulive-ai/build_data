@@ -7,3 +7,6 @@ Pillow<10.0
 openai
 opencv-python
 python-dotenv
+flask-cors
+PyJWT
+easyocr

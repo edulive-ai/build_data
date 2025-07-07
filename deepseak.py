@@ -14,7 +14,7 @@ MODEL_NAME = "skylark-vision-250515"
 # --- Cấu hình ảnh ---
 # Đường dẫn đến file ảnh cục bộ của bạn
 # ĐẢM BẢO FILE ẢNH NÀY TỒN TẠI TRONG CÙNG THƯ MỤC VỚI SCRIPT HOẶC CUNG CẤP ĐƯỜNG DẪN TUYỆT ĐỐI CHÍNH XÁC
-IMAGE_PATH = "/home/batien/Desktop/build_data/books_cropped/de-kiem-tra-giua-ki-1-kntt/image_0001/crop_004_cls3.png" 
+IMAGE_PATH = "/home/batien/Desktop/build_data/books_cropped/test/image_0000/crop_000_cls1.png" 
 
 # --- Hàm chuyển đổi ảnh sang Base64 ---
 def image_to_base64(image_path):
@@ -89,7 +89,9 @@ if __name__ == "__main__":
         print(f"Ảnh '{IMAGE_PATH}' đã được chuyển đổi sang Base64.")
 
         # Bước 2: Chuẩn bị câu hỏi cho ảnh
-        question = "what content in this image?, response in Vietnamese"
+        question = """Extract the text from the following image exactly as it appears. 
+                        Do not add, remove, or modify any words or characters. 
+                        Preserve the original language and formatting of the text in the image."""
 
         # Bước 3: Gọi API DeepSeek Vision
         api_response = call_deepseek_vision_api(base64_image_url, question)
@@ -104,7 +106,7 @@ if __name__ == "__main__":
             if api_response.get("choices"):
                 for choice in api_response["choices"]:
                     if choice.get("message") and choice["message"].get("content"):
-                        print(f"Nội dung phản hồi: {choice['message']['content']}")
+                        print(f"{choice['message']['content']}")
             else:
                 print("Không tìm thấy nội dung phản hồi trong cấu trúc dự kiến.")
         else:
