@@ -231,8 +231,8 @@ def main():
     Hàm chính với các tùy chọn xử lý
     """
     
-    pdf_file = "pdf_books/30_de_thi.pdf"
-    output_dir = f"books_to_images/30-de-thi"
+    pdf_file = "pdf_books/toan-1-tuan-13.pdf"
+    output_dir = f"books_to_images/toan-1-tuan-13"
     
     # Kiểm tra file tồn tại
     if not os.path.exists(pdf_file):

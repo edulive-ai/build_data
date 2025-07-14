@@ -8,8 +8,8 @@ from pathlib import Path
 from datetime import datetime
 from .pdf_processor import PDFProcessor
 from .yolo_processor import YOLOProcessor
-# from .ocr_deepseak import OCRProcessor
-from .ocr_processor import OCRProcessor
+from .ocr_deepseak import OCRProcessor
+# from .ocr_processor import OCRProcessor
 
 class ProcessingManager:
     def __init__(self, debug_mode=False, log_file=None):

@@ -624,7 +624,7 @@ def add_question():
             'chapter': data.get('chapter', ''),
             'subject': data.get('subject', ''),
             'lesson': data.get('lesson', ''),
-            'book': book_name
+            'book': book_name.removeprefix("books_cropped/")
         }
         
         # Load và thêm vào danh sách
@@ -657,7 +657,7 @@ def update_question(question_id):
                     'chapter': data.get('chapter', q.get('chapter', '')),
                     'subject': data.get('subject', q.get('subject', '')),
                     'lesson': data.get('lesson', q.get('lesson', '')),
-                    'book': book_name
+                    'book': book_name.removeprefix("books_cropped/")
                 })
                 save_questions(questions, book_name)
                 return jsonify({'success': True, 'question': questions[i]})
@@ -736,14 +736,14 @@ def get_text_content(folder_name):
                 'success': True, 
                 'content': content,
                 'folder': folder_name,
-                'book': book_name
+                'book': book_name.removeprefix("books_cropped/")
             })
         else:
             return jsonify({
                 'success': False, 
                 'error': f'Không tìm thấy file text.txt trong folder {folder_name}',
                 'folder': folder_name,
-                'book': book_name
+                'book': book_name.removeprefix("books_cropped/")
             })
     except Exception as e:
         return jsonify({'success': False, 'error': f'Lỗi khi đọc file: {str(e)}'}), 500

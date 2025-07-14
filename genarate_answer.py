@@ -12,7 +12,6 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 def encode_image(image_path: str) -> str:
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode('utf-8')
-
 # === Hàm gọi GPT: Có thể dùng ảnh hoặc chỉ dùng câu hỏi ===
 def generate_answer(question_text: str, image_path: str = None) -> str:
     print("📤 Đang gửi yêu cầu tới GPT...")

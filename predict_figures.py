@@ -13,7 +13,7 @@ filepath = hf_hub_download(
 model = YOLOv10(filepath)
 
 # --- Input image path ---
-image_path = "/home/batien/Desktop/build_data/books_to_images/de-on-tap-cuoi-ki-1-lop-1/de-on-tap-cuoi-ki-1-lop-1_1750749511_MATHX_LOP1_e_on_tap_cuoi_ki_1_lop_1_ap_an_page_003.png"
+image_path = "/home/batien/Desktop/build_data/books_to_images/test_tq/test_tq_page_013.png"
 
 # --- Predict ---
 det_res = model.predict(
