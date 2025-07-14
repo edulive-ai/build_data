@@ -11,7 +11,7 @@ body {
 }
 
 .container {
-    max-width: 1400px;
+    max-width: 1450px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -144,6 +144,24 @@ body {
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    
+    /* ===== CỐ ĐỊNH KÍCH THƯỚC ===== */
+    width: 430px; /* Chiều rộng cố định */
+    min-width: 400px; /* Chiều rộng tối thiểu */
+    max-width: 600px; /* Chiều rộng tối đa */
+    
+    /* ===== CỐ ĐỊNH CHIỀU CAO (TÙY CHỌN) ===== */
+    height: 2000px; /* Chiều cao cố định - có thể điều chỉnh */
+    min-height: 600px; /* Chiều cao tối thiểu */
+    max-height: 1200px; /* Chiều cao tối đa */
+    
+    /* ===== OVERFLOW HANDLING ===== */
+    overflow-y: auto; /* Cuộn dọc khi nội dung quá dài */
+    overflow-x: hidden; /* Ẩn cuộn ngang */
+    
+    /* ===== GIỮ CỐ ĐỊNH VỊ TRÍ ===== */
+    flex-shrink: 0; /* Không co lại khi container nhỏ */
+    flex-grow: 0; /* Không mở rộng khi container lớn */
 }
 
 .folder-select, .book-select {
@@ -175,7 +193,7 @@ body {
     text-align: center; /* Căn giữa văn bản bên trong */
 
     /* ***** KÍCH THƯỚC CỐ ĐỊNH ***** */
-    width: 400px; /* Chiều rộng cố định, ví dụ 300px */
+    width: 380px; /* Chiều rộng cố định, ví dụ 300px */
     height: 60px; /* Chiều cao cố định, ví dụ 100px */
     
     /* ***** CĂN GIỮA BOX ***** */
