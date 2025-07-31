@@ -1,11 +1,11 @@
 # 📚 PDF Processing Application - Hệ thống Xử lý PDF và Quản lý Câu hỏi
 
-Ứng dụng web tự động xử lý file PDF thành câu hỏi và đáp án sử dụng YOLO Detection và OCR, kết hợp với giao diện quản lý câu hỏi và gallery xem ảnh.
+Ứng dụng web tự động xử lý file PDF thành câu hỏi và đáp án sử dụng YOLO Detection và DeepSeek OCR API, kết hợp với giao diện quản lý câu hỏi và gallery xem ảnh.
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue)
 ![Flask](https://img.shields.io/badge/Flask-2.3+-green)
 ![YOLO](https://img.shields.io/badge/YOLO-v10-red)
-![OCR](https://img.shields.io/badge/OCR-EasyOCR-orange)
+![DeepSeek](https://img.shields.io/badge/OCR-DeepSeek%20API-orange)
 
 ## 🎯 Tính năng chính
 
@@ -13,7 +13,7 @@
 - **Upload PDF**: Upload file PDF trực tiếp qua web interface
 - **Convert cao cấp**: Chuyển PDF thành ảnh 300 DPI chất lượng cao
 - **YOLO Detection**: Tự động phát hiện và tách câu hỏi, đáp án bằng AI
-- **OCR thông minh**: Nhận diện text tiếng Việt và tiếng Anh từ ảnh
+- **DeepSeek OCR**: Nhận diện text tiếng Việt và tiếng Anh với AI API
 
 ### 📝 Quản lý câu hỏi
 - **CRUD hoàn chỉnh**: Thêm, sửa, xóa câu hỏi với ảnh đính kèm
@@ -26,6 +26,12 @@
 - **Multi-format**: Hỗ trợ hiển thị theo folder, class, timeline
 - **Interactive**: Preview fullscreen, download, keyboard navigation
 - **Search & Filter**: Tìm kiếm và lọc ảnh theo nhiều tiêu chí
+
+### 🛠️ Command Line Processing
+- **Standalone CLI**: Xử lý PDF/images mà không cần web server
+- **Batch processing**: Xử lý nhiều file cùng lúc
+- **Fixed directory structure**: Tự động tạo cấu trúc thư mục `image_0001, image_0002...`
+- **Real-time monitoring**: Theo dõi tiến trình xử lý
 
 ### 🎨 Giao diện hiện đại
 - **Responsive design**: Tối ưu cho desktop, tablet, mobile
@@ -41,6 +47,7 @@
 - **GPU**: CUDA-compatible (tùy chọn, tăng tốc xử lý)
 - **Storage**: 5GB+ free space
 - **OS**: Windows, macOS, Linux
+- **DeepSeek API Key**: Đăng ký tại [deepseek.com](https://deepseek.com)
 
 ### 1. Clone repository
 ```bash
@@ -64,56 +71,179 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Tạo cấu trúc thư mục
+### 4. Cấu hình API Key
+Tạo file `.env` trong thư mục gốc:
+```bash
+# .env
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+```
+
+**Lấy DeepSeek API Key:**
+1. Truy cập [https://deepseek.com](https://deepseek.com)
+2. Đăng ký tài khoản
+3. Vào phần API Management
+4. Tạo API Key mới
+5. Copy và paste vào file `.env`
+
+### 5. Tạo cấu trúc thư mục
 ```bash
 mkdir -p uploads books_to_images books_detections books_cropped
 ```
 
-### 5. Chạy ứng dụng
+### 6. Chạy ứng dụng
+
+#### Web Application:
 ```bash
 python app.py
 ```
-
 Truy cập: `http://localhost:5000`
+
+#### Command Line Processing:
+```bash
+# Xử lý single PDF
+python run.py path/to/file.pdf
+
+# Xử lý folder PDFs
+python run.py path/to/pdf_folder/
+
+# Xử lý single image
+python run.py path/to/image.png
+
+# Xử lý folder images
+python run.py path/to/image_folder/
+
+# Với custom output directory
+python run.py input_path -o custom_output_dir
+
+# Verbose mode để debug
+python run.py input_path --verbose
+```
 
 ## 📁 Cấu trúc thư mục
 
 ```
 pdf-processing-app/
-├── app.py                  # File chính Flask
+├── app.py                  # Flask web server
+├── run.py                  # CLI processing tool
 ├── requirements.txt        # Dependencies
+├── .env                    # API keys (tạo thủ công)
 ├── README.md              # Tài liệu này
 │
-├── modules/               # Các module xử lý
+├── modules/               # Web application modules
 │   ├── __init__.py
-│   ├── pdf_processor.py    # Xử lý PDF → Images
+│   ├── pdf_processor.py    # PDF → Images
 │   ├── yolo_processor.py   # YOLO Detection & Crop
 │   ├── ocr_processor.py    # OCR Text Recognition
-│   ├── processing_manager.py # Orchestrator
+│   ├── processing_manager.py # Web Orchestrator
 │   └── gallery_manager.py  # Gallery Management
 │
+├── modules_auto_mapping/  # CLI processing modules
+│   ├── __init__.py
+│   ├── pdf_processor.py    # PDF conversion
+│   ├── detector.py         # YOLO detection
+│   ├── ocr_service.py      # DeepSeek OCR
+│   ├── bbox_processor.py   # Document structure
+│   ├── question_classifier.py # Question identification
+│   ├── mapping_generator.py # Mapping format
+│   └── utils.py           # Utilities
+│
+├── pipeline.py            # Main processing pipeline
+│
 ├── templates/             # HTML Templates
-│   ├── index.html         # Trang chính
-│   └── gallery.html       # Trang Gallery
+│   ├── index.html         # Main page
+│   ├── gallery.html       # Gallery page
+│   └── login.html         # Login page
 │
 ├── static/               # Frontend Assets
-│   ├── style.css         # CSS chính
-│   ├── gallery.css       # CSS Gallery
-│   ├── script.js         # JS trang chính
-│   └── gallery.js        # JS Gallery
+│   ├── style.css         # Main CSS
+│   ├── gallery.css       # Gallery CSS
+│   ├── login.css         # Login CSS
+│   ├── script.js         # Main JS
+│   ├── gallery.js        # Gallery JS
+│   └── login.js          # Login JS
 │
-├── uploads/              # File PDF upload (tự tạo)
-├── books_to_images/      # Ảnh từ PDF (tự tạo)
-├── books_detections/     # Ảnh có bbox (tự tạo)
-├── books_cropped/        # Ảnh đã crop (tự tạo)
+├── uploads/              # PDF uploads (auto-created)
+├── books_to_images/      # PDF → Images (auto-created)
+├── books_detections/     # Images with bboxes (auto-created)
+├── books_cropped/        # Cropped images (auto-created)
+│   └── <book_name>/      # Each book folder
+│       ├── image_0001/   # Fixed directory structure
+│       │   ├── bbox_001_question_cls0.png
+│       │   ├── bbox_002_answer_cls1.png
+│       │   └── text.txt  # OCR results
+│       ├── image_0002/
+│       ├── mapping.json  # Question database
+│       └── folder_processing_summary.json
 │
-└── cropped/              # Sách mặc định (legacy)
-    └── mapping.json      # Database câu hỏi
+└── cropped/              # Default book (legacy)
+    └── mapping.json      # Default database
 ```
 
 ## 🎯 Hướng dẫn sử dụng
 
-### 📤 Upload và xử lý PDF
+### 🖥️ Command Line Processing (Khuyên dùng)
+
+CLI tool `run.py` cung cấp xử lý standalone mạnh mẽ với cấu trúc thư mục cố định.
+
+#### Xử lý PDF:
+```bash
+# Single PDF
+python run.py document.pdf
+# → Tạo: books_to_images/document/ và books_cropped/document/
+
+# Folder chứa nhiều PDFs
+python run.py pdf_folder/
+# → Xử lý tất cả PDFs trong folder
+
+# Custom output
+python run.py document.pdf -o my_results/
+```
+
+#### Xử lý Images:
+```bash
+# Single image
+python run.py image.png
+# → Tạo: books_cropped/image_0001/
+
+# Folder images
+python run.py images_folder/
+# → Xử lý tất cả images, tạo image_0001/, image_0002/...
+```
+
+#### Options:
+```bash
+python run.py --help
+
+# Verbose debugging
+python run.py input.pdf --verbose
+
+# Custom DPI for PDF conversion
+python run.py input.pdf --dpi 300
+
+# Custom worker threads
+python run.py input.pdf --workers 4
+
+# Custom directories
+python run.py input.pdf --images-dir converted_images/ -o final_results/
+```
+
+#### Output Structure:
+```
+books_cropped/document_name/
+├── image_0001/
+│   ├── bbox_001_question_cls0.png    # Cropped question
+│   ├── bbox_002_answer_cls1.png      # Cropped answer
+│   ├── bbox_003_other_cls2.png       # Other elements
+│   └── text.txt                      # OCR text content
+├── image_0002/
+│   └── ...
+├── mapping.json                      # Auto-generated questions
+└── folder_processing_summary.json   # Processing statistics
+```
+
+### 📤 Web Interface
+
+#### Upload và xử lý PDF:
 
 1. **Truy cập trang chính**: `http://localhost:5000`
 
@@ -127,13 +257,13 @@ pdf-processing-app/
 4. **Theo dõi tiến trình**:
    - 📄 **PDF → Images**: Chuyển đổi thành ảnh 300 DPI
    - 🤖 **YOLO Detection**: Phát hiện câu hỏi/đáp án
-   - 🔍 **OCR**: Nhận diện text từ ảnh
+   - 🔍 **DeepSeek OCR**: Nhận diện text từ ảnh
 
 5. **Hoàn thành**: Sách mới sẽ xuất hiện trong dropdown
 
-### 📝 Quản lý câu hỏi
+#### Quản lý câu hỏi:
 
-#### Thêm câu hỏi mới:
+**Thêm câu hỏi mới:**
 1. **Chọn sách** từ dropdown
 2. **Điền thông tin**:
    - Môn học, chương, bài học
@@ -147,12 +277,7 @@ pdf-processing-app/
    - Click vào ảnh đáp án
 5. **Lưu**: Click "Thêm câu hỏi"
 
-#### Chỉnh sửa câu hỏi:
-1. **Click "Sửa"** ở câu hỏi muốn chỉnh sửa
-2. **Thay đổi** thông tin trong modal
-3. **Lưu**: Click "Cập nhật"
-
-#### JSON Editor:
+**JSON Editor:**
 1. **Click "Tải JSON"** để load dữ liệu
 2. **Chỉnh sửa** trực tiếp JSON
 3. **Validate**: Click "Kiểm tra JSON"
@@ -181,42 +306,74 @@ pdf-processing-app/
    - **Escape**: Đóng modal
    - **Download**: Tải ảnh về máy
 
-6. **Tìm kiếm**: Dùng search box để lọc theo tên file
-
 ## ⚙️ Cấu hình nâng cao
 
 ### Environment Variables
 ```bash
-# Tùy chọn
-export FLASK_ENV=development
-export FLASK_DEBUG=1
-export CUDA_VISIBLE_DEVICES=0  # Chọn GPU
+# .env file
+DEEPSEEK_API_KEY=your_api_key_here
+FLASK_ENV=development
+FLASK_DEBUG=1
+CUDA_VISIBLE_DEVICES=0  # Chọn GPU
+```
+
+### Tùy chỉnh DeepSeek OCR
+```python
+# modules_auto_mapping/ocr_service.py
+# Thay đổi model hoặc parameters
+self.api_key = os.getenv('DEEPSEEK_API_KEY')
+self.model = "deepseek-chat"  # Model name
 ```
 
 ### Tùy chỉnh YOLO
 ```python
-# modules/yolo_processor.py
+# modules_auto_mapping/detector.py
 # Thay đổi confidence threshold
 det_res = self.model.predict(str(image_path), imgsz=1024, conf=0.2, device="cuda")
 ```
 
-### Tùy chỉnh OCR
-```python
-# modules/ocr_processor.py
-# Thêm ngôn ngữ
-self.reader = easyocr.Reader(['vi', 'en', 'zh'])
-```
-
 ### Performance Tuning
 ```python
-# app.py
-# Tăng file upload limit
+# run.py command line options
+python run.py input.pdf --dpi 300 --workers 4
+
+# app.py web server
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB
+```
+
+### Authentication Setup
+```python
+# app.py - Default credentials
+USERS = {
+    'admin': {
+        'password': hashlib.sha256('admin123'.encode()).hexdigest(),
+        'role': 'admin'
+    },
+    'user': {
+        'password': hashlib.sha256('user123'.encode()).hexdigest(),
+        'role': 'user'
+    }
+}
 ```
 
 ## 🔧 API Documentation
 
-### PDF Processing
+### CLI Processing (`run.py`)
+```bash
+# Auto-detect input type and process
+python run.py input_path [options]
+
+# Input types supported:
+# - Single PDF file
+# - Single image file  
+# - Folder with PDFs
+# - Folder with images
+# - Mixed folder (PDFs + images)
+```
+
+### Web APIs
+
+#### PDF Processing
 ```http
 POST /upload_pdf
 Content-Type: multipart/form-data
@@ -226,7 +383,7 @@ book_name: string
 processing_mode: "complete"
 ```
 
-### Gallery APIs
+#### Gallery APIs
 ```http
 GET /api/gallery/books                    # Danh sách sách
 GET /api/gallery/detection?book={name}    # Ảnh detection
@@ -235,7 +392,7 @@ GET /api/gallery/book-info/{name}         # Thông tin sách
 GET /api/gallery/debug                    # Debug info
 ```
 
-### Questions Management
+#### Questions Management
 ```http
 GET /api/questions?book={name}            # Lấy câu hỏi
 POST /api/questions                       # Thêm câu hỏi
@@ -243,18 +400,26 @@ PUT /api/questions/{id}                   # Cập nhật câu hỏi
 DELETE /api/questions/{id}                # Xóa câu hỏi
 ```
 
-### Status Tracking
+#### Authentication
 ```http
-GET /processing_status/{status_id}        # Trạng thái xử lý
-GET /processing_summary/{status_id}       # Tóm tắt kết quả
-DELETE /cleanup_status/{status_id}        # Cleanup
+POST /api/login                           # Đăng nhập
+POST /api/verify-token                    # Verify token
+POST /api/logout                          # Đăng xuất
 ```
 
 ## 🐛 Troubleshooting
 
 ### Lỗi thường gặp
 
-#### 1. Module not found
+#### 1. Missing DeepSeek API Key
+```bash
+Error: DEEPSEEK_API_KEY not found in environment
+
+# Fix: Tạo file .env với API key
+echo "DEEPSEEK_API_KEY=your_key_here" > .env
+```
+
+#### 2. Module not found
 ```bash
 # Kiểm tra virtual environment
 which python
@@ -264,80 +429,91 @@ pip list
 pip install -r requirements.txt
 ```
 
-#### 2. CUDA out of memory
+#### 3. CUDA out of memory
 ```python
-# Sử dụng CPU thay vì GPU
-det_res = self.model.predict(str(image_path), imgsz=1024, conf=0.2, device="cpu")
+# Sử dụng CPU thay vì GPU trong detector.py
+det_res = self.model.predict(str(image_path), device="cpu")
 ```
 
-#### 3. Upload file quá lớn
+#### 4. Upload file quá lớn
 ```python
 # Tăng limit trong app.py
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024
 ```
 
-#### 4. OCR không nhận diện
-- Kiểm tra chất lượng ảnh crop
-- Thử điều chỉnh confidence threshold
-- Kiểm tra ngôn ngữ được hỗ trợ
-
-#### 5. Gallery không hiển thị sách
+#### 5. DeepSeek API quota exceeded
 ```bash
-# Kiểm tra cấu trúc thư mục
-ls -la books_detections/
-ls -la books_cropped/
+# Kiểm tra usage tại deepseek.com
+# Hoặc switch sang OCR offline:
+pip install easyocr
+# Và thay đổi trong modules_auto_mapping/ocr_service.py
+```
 
-# Debug API
-curl http://localhost:5000/api/gallery/debug
+#### 6. CLI không detect được input type
+```bash
+# Check file extensions
+ls -la input_folder/
+
+# Force processing với verbose
+python run.py input_path --verbose
 ```
 
 ### Debug Mode
 
-1. **Bật debug logging**:
+1. **CLI Debug**:
+```bash
+python run.py input_path --verbose
+```
+
+2. **Web Debug**:
 ```python
+# app.py
 import logging
 logging.basicConfig(level=logging.DEBUG)
 ```
 
-2. **Kiểm tra API trực tiếp**:
+3. **API Debug**:
 ```bash
-# Test book list
+# Test endpoints
+curl http://localhost:5000/api/gallery/debug
 curl http://localhost:5000/api/gallery/books
-
-# Test detection images
-curl "http://localhost:5000/api/gallery/detection?book=30-de-thi"
 ```
-
-3. **Browser Console**: Mở F12 > Console để xem lỗi JavaScript
 
 ## 📊 Performance
 
 ### Benchmarks
 - **PDF → Images**: ~2-5 giây/trang
 - **YOLO Detection**: ~1-3 giây/ảnh (GPU)
-- **OCR**: ~0.5-2 giây/crop (tùy kích thước)
+- **DeepSeek OCR**: ~1-2 giây/crop (API call)
 - **Total**: ~5-15 phút cho PDF 50 trang
+
+### CLI vs Web Performance
+- **CLI (`run.py`)**: Faster, no web overhead, batch processing
+- **Web interface**: Real-time monitoring, user-friendly, concurrent uploads
 
 ### Tối ưu hóa
 - **GPU**: Tăng tốc YOLO 5-10x
-- **SSD**: Tăng tốc I/O 2-3x
-- **RAM**: 16GB+ cho PDF lớn
-- **CPU**: Multi-core giúp OCR nhanh hơn
+- **SSD**: Tăng tốc I/O 2-3x  
+- **API Key tier**: DeepSeek Pro API nhanh hơn
+- **Batch size**: Process multiple images concurrent
 
 ## 🔐 Security Notes
 
+- **API Keys**: Lưu trong `.env`, không commit vào Git
 - **File upload**: Chỉ chấp nhận PDF, giới hạn 100MB
 - **Path traversal**: Validate tên sách với regex
-- **XSS**: Escape HTML trong JSON editor
-- **CSRF**: Session-based cho production
+- **Authentication**: JWT tokens cho web interface
+- **Rate limiting**: DeepSeek API có giới hạn calls/minute
 
 ## 🤝 Contributing
 
 1. **Fork** repository
 2. **Tạo branch**: `git checkout -b feature/new-feature`
-3. **Commit**: `git commit -m 'Add new feature'`
-4. **Push**: `git push origin feature/new-feature`
-5. **Pull Request**: Tạo PR với mô tả chi tiết
+3. **Test CLI**: `python run.py test_input/`
+4. **Test Web**: Start server và test UI
+5. **Commit**: `git commit -m 'Add new feature'`
+6. **Push**: `git push origin feature/new-feature`
+7. **Pull Request**: Tạo PR với mô tả chi tiết
 
 ## 📝 License
 
@@ -347,26 +523,108 @@ MIT License - Xem file LICENSE để biết chi tiết
 
 - **Issues**: Tạo issue trên GitHub
 - **Documentation**: Xem README này
-- **Debug**: Sử dụng API `/api/gallery/debug`
+- **CLI Help**: `python run.py --help`
+- **Web Debug**: `/api/gallery/debug`
 
 ## 🚀 Roadmap
 
 ### v2.0 (Coming Soon)
-- [ ] **Multi-language**: Thêm hỗ trợ tiếng Trung, Nhật
-- [ ] **Cloud storage**: S3, Google Drive integration
-- [ ] **Advanced OCR**: Handwriting recognition
-- [ ] **API Authentication**: JWT tokens
-- [ ] **Batch processing**: Xử lý nhiều PDF cùng lúc
+- [ ] **Multiple OCR providers**: EasyOCR, Tesseract fallback
+- [ ] **Cloud deployment**: Docker, AWS/GCP support
+- [ ] **Advanced PDF parsing**: Table detection, formula recognition
+- [ ] **API rate limiting**: Built-in quota management
+- [ ] **Webhook support**: Real-time processing notifications
 
 ### v2.1
-- [ ] **Export formats**: Word, Excel, JSON
-- [ ] **Question templates**: Templates cho từng môn học
-- [ ] **Statistics**: Analytics và reporting
-- [ ] **Collaborative**: Multi-user editing
+- [ ] **Parallel processing**: Multi-GPU YOLO, concurrent OCR
+- [ ] **Export formats**: Word, Excel, SCORM packages
+- [ ] **Question templates**: Subject-specific templates
+- [ ] **Analytics dashboard**: Processing statistics, accuracy metrics
+- [ ] **Multi-language UI**: English, Vietnamese, Chinese
 
 ---
 
-## 🎉 Bắt đầu ngay!
+## 🎉 Quick Start Examples
+
+### Example 1: Xử lý single PDF với CLI
+```bash
+# Download sample PDF
+curl -o sample.pdf https://example.com/sample.pdf
+
+# Process với CLI (khuyên dùng)
+python run.py sample.pdf
+
+# Kết quả trong books_cropped/sample/
+ls books_cropped/sample/
+# → image_0001/, image_0002/, mapping.json
+```
+
+### Example 2: Xử lý batch PDFs
+```bash
+# Tạo folder PDFs
+mkdir pdf_batch/
+cp *.pdf pdf_batch/
+
+# Process tất cả PDFs
+python run.py pdf_batch/ --verbose
+
+# Check results
+ls books_cropped/
+# → book1/, book2/, book3/...
+```
+
+### Example 3: Web interface full workflow
+```bash
+# Start server
+python app.py
+
+# Login: admin/admin123
+# Upload PDF → Process → View Gallery → Create Questions
+```
+
+### Example 4: API-only processing
+```bash
+# Get books
+curl http://localhost:5000/api/gallery/books
+
+# Get detection images
+curl "http://localhost:5000/api/gallery/detection?book=sample"
+
+# Get mapping questions
+curl "http://localhost:5000/api/questions?book=sample"
+```
+
+## 🔑 DeepSeek API Setup Guide
+
+1. **Đăng ký tài khoản**: 
+   - Truy cập [https://platform.deepseek.com](https://platform.deepseek.com)
+   - Đăng ký với email
+
+2. **Tạo API Key**:
+   - Vào **API Keys** section
+   - Click **Create new secret key**
+   - Copy key (chỉ hiển thị 1 lần)
+
+3. **Cấu hình local**:
+   ```bash
+   # Tạo .env file
+   echo "DEEPSEEK_API_KEY=sk-your-key-here" > .env
+   
+   # Hoặc set environment variable
+   export DEEPSEEK_API_KEY=sk-your-key-here
+   ```
+
+4. **Test API**:
+   ```bash
+   python -c "
+   import os
+   from dotenv import load_dotenv
+   load_dotenv()
+   print('API Key loaded:', bool(os.getenv('DEEPSEEK_API_KEY')))
+   "
+   ```
+
+**Bắt đầu ngay!** 
 
 ```bash
 git clone <repository-url>
@@ -374,7 +632,10 @@ cd pdf-processing-app
 python -m venv venv
 source venv/bin/activate  # hoặc venv\Scripts\activate trên Windows
 pip install -r requirements.txt
-python app.py
+echo "DEEPSEEK_API_KEY=your_key_here" > .env
+python run.py sample.pdf  # CLI processing
+# HOẶC
+python app.py  # Web interface
 ```
 
-Truy cập `http://localhost:5000` và bắt đầu xử lý PDF! 🚀
+Truy cập `http://localhost:5000` hoặc dùng CLI `python run.py --help` để bắt đầu! 🚀

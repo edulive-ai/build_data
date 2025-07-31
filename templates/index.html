@@ -384,7 +384,8 @@
                     showUploadModal();
                     break;
                 case 'gallery':
-                    window.open('/gallery', '_blank');
+                    // FIXED: Bỏ window.open, thay bằng:
+                    window.location.href = '/gallery';
                     break;
             }
         }

@@ -7,10 +7,11 @@ from config import Config
 from modules_auto_mapping import (
     DocumentDetector,
     OCRService,
-    QuestionClassifier,
     BBoxProcessor,
     ImageUtils
 )
+from modules_auto_mapping.rule_based_classifier import QuestionClassifier
+
 
 # Setup logging
 logging.basicConfig(

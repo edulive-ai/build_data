@@ -199,7 +199,7 @@ def verify_token():
                 'username': username,
                 'role': USERS[username]['role']
             }
-        })
+        }) , 200
         
     except jwt.ExpiredSignatureError:
         return jsonify({'valid': False, 'message': 'Token expired'}), 401
