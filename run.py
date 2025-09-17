@@ -137,7 +137,8 @@ def process_single_image(image_path: str, output_dir: str, image_index: int = 1)
         mapping_data = mapping_generator.process_single_image_questions(
             preliminary_result, 
             mapping_generator.extract_book_name(os.path.dirname(image_path)), 
-            1
+            1,
+            image_path
         )
         
         # Create final result

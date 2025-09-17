@@ -109,6 +109,43 @@ class ImageUtils:
         except Exception as e:
             logger.warning(f"Error cleaning up temp files: {e}")
 
+    @staticmethod
+    def extract_page_number_from_filename(filename: str) -> int:
+        """
+        Extract page number from PDF-generated image filename
+        
+        Format: {pdf_name}_page_{page_number:03d}.png
+        Example: book1_page_001.png -> returns 1
+        
+        Args:
+            filename: Name of the image file
+            
+        Returns:
+            Page number (1-based) or 0 if cannot extract
+        """
+        try:
+            import re
+            import os
+            
+            # Get just the filename without path
+            base_filename = os.path.basename(filename)
+            
+            # Pattern to match: {anything}_page_{number}.{extension}
+            pattern = r'_page_(\d{3})\.'
+            
+            match = re.search(pattern, base_filename)
+            if match:
+                page_num = int(match.group(1))
+                logger.debug(f"Extracted page number {page_num} from {base_filename}")
+                return page_num
+            else:
+                logger.warning(f"Cannot extract page number from filename: {base_filename}")
+                return 0
+                
+        except Exception as e:
+            logger.error(f"Error extracting page number from {filename}: {e}")
+            return 0
+
 class GeometryUtils:
     """Utility class for geometric operations"""
     

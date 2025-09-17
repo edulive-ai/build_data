@@ -28,15 +28,17 @@ class MappingGenerator:
             logger.error(f"Error extracting book name: {e}")
             return "unknown"
     
-    def process_single_image_questions(self, result: Dict, book_name: str, starting_index: int) -> List[Dict]:
+    def process_single_image_questions(self, result: Dict, book_name: str, starting_index: int, image_path: str = None) -> List[Dict]:
         """
         Process questions from single image result
         UPDATED: No crops folder, images directly in subfolder
+        UPDATED: Added page_number extraction from image filename
         
         Args:
             result: Single image processing result
             book_name: Book name for this image
             starting_index: Starting index for questions
+            image_path: Path to the source image (to extract page number)
             
         Returns:
             List of question mappings for this image
@@ -45,11 +47,17 @@ class MappingGenerator:
             if result.get('status') != 'success':
                 logger.warning(f"Skipping non-successful result")
                 return []
+
+            # Extract page number from image path if provided
+            page_number = 0
+            if image_path:
+                from .utils import ImageUtils
+                page_number = ImageUtils.extract_page_number_from_filename(image_path)
             
             question_groups = result.get('processed_data', {}).get('question_groups', [])
             questions_mapping = []
             
-            logger.debug(f"Processing {len(question_groups)} question groups")
+            logger.debug(f"Processing {len(question_groups)} question groups from page {page_number}")
             
             for i, group in enumerate(question_groups):
                 try:
@@ -109,7 +117,8 @@ class MappingGenerator:
                         "image_question": image_question_paths,
                         "image_answer": [],
                         "difficulty": "easy",
-                        "book": book_name
+                        "book": book_name,
+                        "page_number": page_number
                     }
                     
                     questions_mapping.append(question_mapping)
@@ -201,10 +210,14 @@ class MappingGenerator:
                     boxes = result.get('raw_data', {}).get('boxes', [])
                     self.debug_boxes_structure(boxes)
                     
+                    # Get image path from result
+                    image_path = result.get('raw_data', {}).get('image_path', '')
+                    
                     image_questions = self.process_single_image_questions(
                         result, 
                         book_name, 
-                        current_index
+                        current_index,
+                        image_path
                     )
                     all_questions.extend(image_questions)
                     current_index += len(image_questions)
@@ -253,7 +266,7 @@ class MappingGenerator:
             self.debug_boxes_structure(boxes)
             
             # Process single image
-            questions = self.process_single_image_questions(result, book_name, 1)
+            questions = self.process_single_image_questions(result, book_name, 1, image_path)
             
             # Save mapping file
             mapping_file_path = os.path.join(output_path, "mapping.json")
