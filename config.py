@@ -12,14 +12,14 @@ class Config:
     
     # Detection Settings - COMPLETE VERSION
     IOU_THRESHOLD = 0.7
-    CONFIDENCE_THRESHOLD = 0.2
+    CONFIDENCE_THRESHOLD = 0.4
     TARGET_CLASSES = None  # None = detect all classes, [0,1,2] = specific classes
     OCR_CLASSES = [0, 1, 2]  # Classes that need OCR processing
     
     # DeepSeek Vision API
-    DEEPSEAK_API_ENDPOINT = "https://ark.ap-southeast.bytepluses.com/api/v3/chat/completions"
-    DEEPSEAK_API_KEY = os.getenv("DEEPSEAK_API_KEY")
-    DEEPSEAK_MODEL = "skylark-vision-250515"
+    DEEPSEEK_API_ENDPOINT = "https://ark.ap-southeast.bytepluses.com/api/v3/chat/completions"
+    DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+    DEEPSEEK_MODEL = "skylark-vision-250515"
     
     # OpenAI API
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -32,10 +32,13 @@ class Config:
     # OCR Settings
     OCR_BATCH_SIZE = 5
     OCR_PROMPT = (
-        "Extract the text from the following image exactly as it appears. "
-        "Do not add, remove, or modify any words or characters. "
-        "Preserve the original language and formatting of the text in the image."
-        "If no text is found, return exactly three dots: ."
+        "You are a Vietnamese OCR expert. Please extract the entire text from the following image accurately."
+        "Requirements:"
+        "1. Extract the text from the following image exactly as it appears. "
+        "2. Do not add, remove, or modify any words or characters. "
+        "3. Preserve the original language and formatting of the text in the image."
+        "4. If no text is found, return exactly three dots: .."
+        "5. If there are numbers or mathematical formulas, keep them as they are"
     )
     
     # Question Classification

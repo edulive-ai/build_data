@@ -17,7 +17,7 @@ let currentImageViewMode = 'auto-height';
 let currentImageGridSize = 'medium';
 
 // Initialize app
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initializeAuth(); // Khởi tạo auth trước
     // Các initialization khác sẽ được gọi trong setupAuthenticatedApp()
 });
@@ -56,11 +56,11 @@ function setupEventListeners() {
     document.getElementById('cancelEdit').addEventListener('click', closeEditModal);
 
     // Close modal when clicking outside
-    window.addEventListener('click', function(event) {
+    window.addEventListener('click', function (event) {
         const editModal = document.getElementById('editModal');
         const imageModal = document.getElementById('imagePreviewModal');
         const uploadModal = document.getElementById('uploadModal');
-        
+
         if (event.target === editModal) {
             closeEditModal();
         }
@@ -87,12 +87,12 @@ function setupEventListeners() {
     document.getElementById('editTextBtnModal').addEventListener('click', () => startTextEditingModal());
     document.getElementById('saveTextBtnModal').addEventListener('click', () => saveTextContentModal());
     document.getElementById('cancelTextBtnModal').addEventListener('click', () => cancelTextEditingModal());
-    
+
     // Load image preferences
     loadImagePreferences();
-    
+
     // Apply saved preferences when images are loaded
-    document.addEventListener('imagesLoaded', function() {
+    document.addEventListener('imagesLoaded', function () {
         setImageViewMode(currentImageViewMode);
         setImageGridSize(currentImageGridSize);
     });
@@ -104,11 +104,11 @@ function setupEventListeners() {
 // === AUTHENTICATION FUNCTIONS ===
 function initializeAuth() {
     // FIXED: Check cho tất cả local addresses
-    const isLocal = window.location.hostname === 'localhost' || 
-                   window.location.hostname === '127.0.0.1' ||
-                   window.location.hostname.startsWith('192.168.') ||
-                   window.location.hostname === '0.0.0.0';
-    
+    const isLocal = window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname.startsWith('192.168.') ||
+        window.location.hostname === '0.0.0.0';
+
     if (isLocal) {
         console.log('Running locally, bypassing auth for testing');
         currentUser = { username: 'test', role: 'admin' };
@@ -116,16 +116,16 @@ function initializeAuth() {
         setupAuthenticatedApp();
         return;
     }
-    
+
     // Normal auth flow...
     authToken = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
-    
+
     if (!authToken || authToken.trim() === '') {
         console.log('No token found, redirecting to login');
         window.location.href = '/login';
         return;
     }
-    
+
     verifyAuthToken()
         .then(isValid => {
             if (!isValid) {
@@ -148,33 +148,33 @@ function verifyAuthToken() {
             'Authorization': `Bearer ${authToken}`
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.valid) {
-            currentUser = data.user;
-            return true;
-        }
-        return false;
-    })
-    .catch(error => {
-        console.error('Token verification failed:', error);
-        return false;
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.valid) {
+                currentUser = data.user;
+                return true;
+            }
+            return false;
+        })
+        .catch(error => {
+            console.error('Token verification failed:', error);
+            return false;
+        });
 }
 
 function setupAuthenticatedApp() {
     // Setup logout functionality
     setupLogout();
-    
+
     // Setup user info display
     displayUserInfo();
-    
+
     // Setup auto token refresh
     setupTokenRefresh();
-    
+
     // Add auth headers to all API requests
     setupAuthenticatedRequests();
-    
+
     // Initialize app after auth is verified
     loadBooks();
     loadFolders();
@@ -195,17 +195,17 @@ function setupLogout() {
 
 function displayUserInfo() {
     if (!currentUser) return;
-    
+
     // Update existing elements in header
     const userInfo = document.getElementById('userInfo');
     const usernameDisplay = document.getElementById('usernameDisplay');
     const userRoleDisplay = document.getElementById('userRoleDisplay');
     const logoutBtn = document.getElementById('logoutBtn');
-    
+
     if (userInfo && usernameDisplay && userRoleDisplay && logoutBtn) {
         usernameDisplay.textContent = currentUser.username;
         userRoleDisplay.textContent = currentUser.role;
-        
+
         // Show elements
         userInfo.style.display = 'block';
         logoutBtn.style.display = 'flex';
@@ -218,10 +218,10 @@ function setupTokenRefresh() {
         console.log('No token or user, skipping token refresh setup');
         return;
     }
-    
+
     console.log('Setting up token refresh...');
-    
-    // Refresh token every 30 minutes
+
+    // Refresh token every 8 hours
     setInterval(() => {
         if (authToken && currentUser) {
             verifyAuthToken().then(isValid => {
@@ -231,19 +231,19 @@ function setupTokenRefresh() {
                 }
             });
         }
-    }, 30 * 60 * 1000);
+    }, 8 * 60 * 60 * 1000);
 }
 
 function setupAuthenticatedRequests() {
     // Override fetch to include auth headers
     const originalFetch = window.fetch;
-    window.fetch = function(url, options = {}) {
+    window.fetch = function (url, options = {}) {
         // Add auth header to all API requests
         if (url.startsWith('/api/') && authToken) {
             options.headers = options.headers || {};
             options.headers['Authorization'] = `Bearer ${authToken}`;
         }
-        
+
         return originalFetch(url, options)
             .then(response => {
                 // Handle auth errors
@@ -265,13 +265,13 @@ function handleLogout() {
                 'Authorization': `Bearer ${authToken}`
             }
         })
-        .then(() => {
-            logout();
-        })
-        .catch(error => {
-            console.error('Logout error:', error);
-            logout(); // Force logout even if API fails
-        });
+            .then(() => {
+                logout();
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+                logout(); // Force logout even if API fails
+            });
     }
 }
 
@@ -279,14 +279,14 @@ function logout() {
     // Clear tokens
     sessionStorage.removeItem('authToken');
     localStorage.removeItem('authToken');
-    
+
     // Clear user data
     currentUser = null;
     authToken = null;
-    
+
     // Show logout message
     showAlert('Đã đăng xuất thành công', 'success');
-    
+
     // Redirect to login after short delay
     setTimeout(() => {
         redirectToLogin();
@@ -308,7 +308,7 @@ function ensureImagesToolbar(container) {
     // Create toolbar
     const toolbar = document.createElement('div');
     toolbar.className = 'images-toolbar';
-    
+
     toolbar.innerHTML = `
         <div class="view-mode-buttons">
             <button class="view-mode-btn ${currentImageViewMode === 'auto-height' ? 'active' : ''}" 
@@ -345,7 +345,7 @@ function ensureImagesToolbar(container) {
 
 function setImageViewMode(mode) {
     currentImageViewMode = mode;
-    
+
     // Update all images
     document.querySelectorAll('.images-grid img').forEach(img => {
         img.classList.remove('auto-height', 'fixed-contain', 'adaptive');
@@ -360,20 +360,20 @@ function setImageViewMode(mode) {
 
     // Save preference
     localStorage.setItem('imageViewMode', mode);
-    
+
     // Show feedback
     const modeNames = {
         'auto-height': 'Auto Height - Full Content',
         'fixed-contain': 'Fixed Height - Compact',
         'adaptive': 'Adaptive - Balanced'
     };
-    
+
     showAlert(`Chế độ hiển thị: ${modeNames[mode]}`, 'success');
 }
 
 function setImageGridSize(size) {
     currentImageGridSize = size;
-    
+
     // Update all grids
     document.querySelectorAll('.images-grid').forEach(grid => {
         grid.classList.remove('size-small', 'size-medium', 'size-large', 'size-xlarge');
@@ -407,7 +407,7 @@ function showCompactImages() {
 function loadImagePreferences() {
     const savedViewMode = localStorage.getItem('imageViewMode');
     const savedGridSize = localStorage.getItem('imageGridSize');
-    
+
     if (savedViewMode) {
         currentImageViewMode = savedViewMode;
     }
@@ -418,14 +418,14 @@ function loadImagePreferences() {
 
 // Setup keyboard shortcuts
 function setupKeyboardShortcuts() {
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         // Chỉ hoạt động khi không focus vào input/textarea
-        if (document.activeElement.tagName === 'INPUT' || 
+        if (document.activeElement.tagName === 'INPUT' ||
             document.activeElement.tagName === 'TEXTAREA') {
             return;
         }
-        
-        switch(e.key) {
+
+        switch (e.key) {
             case '1':
                 setImageViewMode('auto-height');
                 break;
@@ -492,7 +492,7 @@ function renderImagesGrid(containerId, isEdit = false) {
 
         imageItem.appendChild(img);
         imageItem.appendChild(imageInfo);
-        
+
         // Add selection click handler (giữ nguyên logic hiện tại)
         imageItem.addEventListener('click', (e) => {
             if (e.ctrlKey || e.metaKey) {
@@ -506,23 +506,23 @@ function renderImagesGrid(containerId, isEdit = false) {
     });
 
     updateImageSelection(isEdit);
-    
+
     // Ensure toolbar exists
     ensureImagesToolbar(container);
-    
+
     // Trigger custom event for image loading
     document.dispatchEvent(new CustomEvent('imagesLoaded'));
 }
 
 // === PDF UPLOAD FUNCTIONS ===
 function setupPDFUpload() {
-    
+
     // Upload form submission
     document.getElementById('uploadForm').addEventListener('submit', handlePDFUpload);
-    
+
     // File input change
     document.getElementById('pdfFile').addEventListener('change', handleFileSelect);
-    
+
     // Upload modal close
     document.getElementById('uploadModal').querySelector('.close').addEventListener('click', closeUploadModal);
     document.getElementById('cancelUpload').addEventListener('click', closeUploadModal);
@@ -531,7 +531,7 @@ function setupPDFUpload() {
 function showUploadModal() {
     const modal = document.getElementById('uploadModal');
     modal.style.display = 'block';
-    
+
     // Reset form
     document.getElementById('uploadForm').reset();
     document.getElementById('fileInfo').style.display = 'none';
@@ -541,7 +541,7 @@ function showUploadModal() {
 function closeUploadModal() {
     const modal = document.getElementById('uploadModal');
     modal.style.display = 'none';
-    
+
     // Stop processing status check if running
     if (processingInterval) {
         clearInterval(processingInterval);
@@ -552,7 +552,7 @@ function closeUploadModal() {
 function handleFileSelect(event) {
     const file = event.target.files[0];
     const fileInfo = document.getElementById('fileInfo');
-    
+
     if (file) {
         // Validate file type
         if (!file.type.includes('pdf')) {
@@ -561,7 +561,7 @@ function handleFileSelect(event) {
             fileInfo.style.display = 'none';
             return;
         }
-        
+
         // Validate file size (100MB)
         const maxSize = 100 * 1024 * 1024;
         if (file.size > maxSize) {
@@ -570,7 +570,7 @@ function handleFileSelect(event) {
             fileInfo.style.display = 'none';
             return;
         }
-        
+
         // Show file info
         document.getElementById('fileName').textContent = file.name;
         document.getElementById('fileSize').textContent = `${(file.size / 1024 / 1024).toFixed(1)} MB`;
@@ -582,76 +582,76 @@ function handleFileSelect(event) {
 
 function handlePDFUpload(event) {
     event.preventDefault();
-    
+
     const formData = new FormData();
     const pdfFile = document.getElementById('pdfFile').files[0];
     const bookName = document.getElementById('bookName').value.trim();
-    
+
     // Validation
     if (!pdfFile) {
         showAlert('Vui lòng chọn file PDF', 'error');
         return;
     }
-    
+
     if (!bookName) {
         showAlert('Vui lòng nhập tên sách', 'error');
         return;
     }
-    
+
     // Validate book name format
     if (!/^[a-zA-Z0-9_-]+$/.test(bookName)) {
         showAlert('Tên sách chỉ được chứa chữ cái, số, dấu gạch dưới và gạch ngang', 'error');
         return;
     }
-    
+
     // Prepare form data
     formData.append('pdf_file', pdfFile);
     formData.append('book_name', bookName);
     formData.append('processing_mode', 'complete');
-    
+
     // Show progress
     const progressDiv = document.getElementById('uploadProgress');
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
     const uploadBtn = document.getElementById('submitUpload');
-    
+
     progressDiv.style.display = 'block';
     progressBar.style.width = '0%';
     progressText.textContent = 'Đang upload file...';
     uploadBtn.disabled = true;
-    
+
     // Upload file
     fetch('/upload_pdf', {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            processingStatusId = data.status_id;
-            progressText.textContent = 'Upload thành công! Bắt đầu xử lý...';
-            
-            // Start monitoring processing status
-            startProcessingMonitor();
-            
-            showAlert('Upload thành công! Đang xử lý PDF...', 'success');
-        } else {
-            throw new Error(data.error || 'Lỗi upload file');
-        }
-    })
-    .catch(error => {
-        console.error('Upload error:', error);
-        showAlert('Lỗi upload: ' + error.message, 'error');
-        
-        // Reset UI
-        progressDiv.style.display = 'none';
-        uploadBtn.disabled = false;
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                processingStatusId = data.status_id;
+                progressText.textContent = 'Upload thành công! Bắt đầu xử lý...';
+
+                // Start monitoring processing status
+                startProcessingMonitor();
+
+                showAlert('Upload thành công! Đang xử lý PDF...', 'success');
+            } else {
+                throw new Error(data.error || 'Lỗi upload file');
+            }
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            showAlert('Lỗi upload: ' + error.message, 'error');
+
+            // Reset UI
+            progressDiv.style.display = 'none';
+            uploadBtn.disabled = false;
+        });
 }
 
 function startProcessingMonitor() {
     if (!processingStatusId) return;
-    
+
     processingInterval = setInterval(() => {
         checkProcessingStatus();
     }, 2000); // Check every 2 seconds
@@ -659,12 +659,12 @@ function startProcessingMonitor() {
 
 function checkProcessingStatus() {
     if (!processingStatusId) return;
-    
+
     fetch(`/processing_status/${processingStatusId}`)
         .then(response => response.json())
         .then(status => {
             updateProcessingProgress(status);
-            
+
             if (status.status === 'completed') {
                 handleProcessingComplete(status);
             } else if (status.status === 'error') {
@@ -679,13 +679,13 @@ function checkProcessingStatus() {
 function updateProcessingProgress(status) {
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
-    
+
     const progress = status.progress || 0;
     const message = status.message || 'Đang xử lý...';
-    
+
     progressBar.style.width = `${progress}%`;
     progressText.textContent = `${message} (${progress}%)`;
-    
+
     // Add stage-specific information
     if (status.stage) {
         let stageText = '';
@@ -711,7 +711,7 @@ function updateProcessingProgress(status) {
             default:
                 stageText = status.stage;
         }
-        
+
         progressText.textContent = `${stageText}: ${message}`;
     }
 }
@@ -722,17 +722,17 @@ function handleProcessingComplete(status) {
         clearInterval(processingInterval);
         processingInterval = null;
     }
-    
+
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
     const uploadBtn = document.getElementById('submitUpload');
-    
+
     progressBar.style.width = '100%';
     progressText.textContent = 'Hoàn thành xử lý PDF!';
     uploadBtn.disabled = false;
-    
+
     showAlert(`Hoàn thành xử lý PDF cho sách: ${status.book_name}`, 'success');
-    
+
     // Refresh books list and questions
     setTimeout(() => {
         loadBooks();
@@ -740,7 +740,7 @@ function handleProcessingComplete(status) {
             // Switch to the new book
             const bookSelect = document.getElementById('bookSelect');
             const newBookPath = `books_cropped/${status.book_name}`;
-            
+
             // Add option if not exists
             let optionExists = false;
             for (let option of bookSelect.options) {
@@ -756,18 +756,18 @@ function handleProcessingComplete(status) {
                 option.textContent = status.book_name;
                 bookSelect.appendChild(option);
             }
-            
+
             // Switch to new book
             bookSelect.value = newBookPath;
             onBookChange();
         }
-        
+
         // Auto close modal after 3 seconds
         setTimeout(() => {
             closeUploadModal();
         }, 3000);
     }, 1000);
-    
+
     // Cleanup status
     setTimeout(() => {
         if (processingStatusId) {
@@ -783,15 +783,15 @@ function handleProcessingError(status) {
         clearInterval(processingInterval);
         processingInterval = null;
     }
-    
+
     const progressText = document.getElementById('progressText');
     const uploadBtn = document.getElementById('submitUpload');
-    
+
     progressText.textContent = `Lỗi: ${status.message}`;
     uploadBtn.disabled = false;
-    
+
     showAlert(`Lỗi xử lý PDF: ${status.message}`, 'error');
-    
+
     // Cleanup status
     setTimeout(() => {
         if (processingStatusId) {
@@ -812,10 +812,10 @@ function loadBooks() {
         .then(books => {
             console.log('Books loaded:', books);
             const bookSelect = document.getElementById('bookSelect');
-            
+
             // Clear existing options
             bookSelect.innerHTML = '';
-            
+
             // Add book options
             if (books.length > 0) {
                 books.forEach(book => {
@@ -825,7 +825,7 @@ function loadBooks() {
                     const displayName = getBookDisplayName(book);
                     option.textContent = book === 'cropped' ? 'Sách mặc định (cropped)' : displayName;
                     bookSelect.appendChild(option);
-                    
+
                     if (book === currentBook) {
                         option.selected = true;
                     }
@@ -841,7 +841,7 @@ function loadBooks() {
         .catch(error => {
             console.error('Error loading books:', error);
             showAlert('Lỗi khi tải danh sách sách: ' + error.message, 'error');
-            
+
             // Add fallback option
             const bookSelect = document.getElementById('bookSelect');
             bookSelect.innerHTML = '<option value="cropped">Sách mặc định (cropped)</option>';
@@ -851,23 +851,23 @@ function loadBooks() {
 function onBookChange() {
     const bookSelect = document.getElementById('bookSelect');
     currentBook = bookSelect.value;
-    
+
     // Reload folders and questions for the new book
     loadFolders();
     loadQuestions();
     loadJsonContent();
-    
+
     // Clear current selections
     selectedQuestionImages = [];
     selectedAnswerImages = [];
-    
+
     // Clear images grid
     const container = document.getElementById('imagesGrid');
-    
+
     // Clear folder selection
     const folderSelect = document.getElementById('folderSelect');
     folderSelect.value = '';
-    
+
     // Hiển thị tên sạch trong alert
     const displayName = getBookDisplayName(currentBook);
     showAlert(`Đã chuyển sang sách: ${displayName}`, 'success');
@@ -884,20 +884,20 @@ function loadFolders() {
             console.log('Folders loaded:', folders);
             const folderSelect = document.getElementById('folderSelect');
             const editFolderSelect = document.getElementById('editFolderSelect');
-            
+
             // Clear existing options
             folderSelect.innerHTML = '<option value="">-- Chọn folder ảnh --</option>';
             if (editFolderSelect) {
                 editFolderSelect.innerHTML = '<option value="">-- Chọn folder ảnh --</option>';
             }
-            
+
             // Add folder options
             folders.forEach(folder => {
                 const option = document.createElement('option');
                 option.value = folder;
                 option.textContent = folder;
                 folderSelect.appendChild(option);
-                
+
                 if (editFolderSelect) {
                     const editOption = document.createElement('option');
                     editOption.value = folder;
@@ -915,21 +915,21 @@ function loadFolders() {
 function loadImagesFromFolder() {
     const folderSelect = document.getElementById('folderSelect');
     const selectedFolder = folderSelect.value;
-    
+
     if (!selectedFolder) {
         const container = document.getElementById('imagesGrid');
         allImages = [];
         hideTextContent();
         return;
     }
-    
+
     fetch(`/api/images/${selectedFolder}?book=${currentBook}`)
         .then(response => response.json())
         .then(images => {
             allImages = images;
             renderImagesGrid('imagesGrid', false);
             loadTextFromFolder(selectedFolder);
-            
+
             // Trigger custom event for image loading
             document.dispatchEvent(new CustomEvent('imagesLoaded'));
         })
@@ -939,6 +939,24 @@ function loadImagesFromFolder() {
         });
 }
 
+function reloadFolderAssets(isEdit = false) {
+    const selectElement = document.getElementById(isEdit ? 'editFolderSelect' : 'folderSelect');
+    const folderName = selectElement ? selectElement.value : '';
+
+    if (!folderName) {
+        showAlert('Vui lòng chọn folder trước khi reload', 'warning');
+        return;
+    }
+
+    if (isEdit) {
+        loadImagesFromFolderForEdit(folderName);
+    } else {
+        loadImagesFromFolder();
+    }
+
+    showAlert(`Đã tải lại nội dung folder: ${folderName}`, 'success');
+}
+
 function loadImagesFromFolderForEdit(folderName) {
     if (!folderName) {
         const container = document.getElementById('editImagesGrid');
@@ -946,14 +964,14 @@ function loadImagesFromFolderForEdit(folderName) {
         textGroup.style.display = 'none';
         return;
     }
-    
+
     fetch(`/api/images/${folderName}?book=${currentBook}`)
         .then(response => response.json())
         .then(images => {
             allImages = images;
             renderImagesGrid('editImagesGrid', true);
             loadTextFromFolderModal(folderName);
-            
+
             // Apply preferences to edit modal
             setTimeout(() => {
                 setImageViewMode(currentImageViewMode);
@@ -979,7 +997,7 @@ function handleImageClick(imagePath, isEdit = false) {
             // Add to selection
             questionImages.push(imagePath);
         }
-        
+
         if (isEdit) {
             editingQuestion.image_question = questionImages;
         } else {
@@ -1013,10 +1031,10 @@ function updateImageSelection(isEdit = false) {
 
     container.querySelectorAll('.image-item').forEach(item => {
         const imagePath = item.dataset.path;
-        
+
         // Remove all selection classes
         item.classList.remove('selected-question', 'selected-answer');
-        
+
         // Remove existing badges
         const existingBadge = item.querySelector('.image-badge');
         if (existingBadge) {
@@ -1042,10 +1060,10 @@ function updateImageSelection(isEdit = false) {
 
 function setSelectionMode(mode, isEdit = false) {
     currentSelectionMode = mode;
-    
+
     const questionBtn = document.getElementById(isEdit ? 'editSelectQuestionMode' : 'selectQuestionMode');
     const answerBtn = document.getElementById(isEdit ? 'editSelectAnswerMode' : 'selectAnswerMode');
-    
+
     if (mode === 'question') {
         questionBtn.style.background = '#45a049';
         answerBtn.style.background = '#FF9800';
@@ -1070,7 +1088,7 @@ function clearAllSelections(isEdit = false) {
 
 function handleAddQuestion(event) {
     event.preventDefault();
-    
+
     const formData = new FormData(event.target);
     const questionData = {
         subject: formData.get('subject'),
@@ -1079,6 +1097,7 @@ function handleAddQuestion(event) {
         question: formData.get('question'),
         answer: formData.get('answer'),
         difficulty: formData.get('difficulty'),
+        page_number: parseInt(formData.get('page_number')) || 0,
         image_question: selectedQuestionImages,
         image_answer: selectedAnswerImages,
         book: currentBook
@@ -1091,25 +1110,25 @@ function handleAddQuestion(event) {
         },
         body: JSON.stringify(questionData)
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Thêm câu hỏi thành công!', 'success');
-            event.target.reset();
-            selectedQuestionImages = [];
-            selectedAnswerImages = [];
-            updateImageSelection();
-            loadQuestions();
-            // Refresh JSON viewer
-            loadJsonContent();
-        } else {
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Thêm câu hỏi thành công!', 'success');
+                event.target.reset();
+                selectedQuestionImages = [];
+                selectedAnswerImages = [];
+                updateImageSelection();
+                loadQuestions();
+                // Refresh JSON viewer
+                loadJsonContent();
+            } else {
+                showAlert('Lỗi khi thêm câu hỏi', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
             showAlert('Lỗi khi thêm câu hỏi', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Lỗi khi thêm câu hỏi', 'error');
-    });
+        });
 }
 
 function loadQuestions() {
@@ -1131,7 +1150,7 @@ function renderQuestionsList(questions) {
     questions.forEach(question => {
         const questionDiv = document.createElement('div');
         questionDiv.className = 'question-item';
-        
+
         questionDiv.innerHTML = `
             <div class="question-header">
                 <span class="question-index">#${question.index}</span>
@@ -1146,12 +1165,12 @@ function renderQuestionsList(questions) {
                 <br><strong>Đáp án:</strong> ${question.answer || 'N/A'}
             </div>
             <div class="question-images">
-                ${(question.image_question || []).map(img => 
-                    `<img src="/images/${currentBook}/${img}" alt="Question image" title="Ảnh câu hỏi: ${img}" onclick="showImagePreview('${img}')" style="cursor: pointer;">`
-                ).join('')}
-                ${(question.image_answer || []).map(img => 
-                    `<img src="/images/${currentBook}/${img}" alt="Answer image" title="Ảnh đáp án: ${img}" onclick="showImagePreview('${img}')" style="cursor: pointer;">`
-                ).join('')}
+                ${(question.image_question || []).map(img =>
+            `<img src="/images/${currentBook}/${img}" alt="Question image" title="Ảnh câu hỏi: ${img}" onclick="showImagePreview('${img}')" style="cursor: pointer;">`
+        ).join('')}
+                ${(question.image_answer || []).map(img =>
+            `<img src="/images/${currentBook}/${img}" alt="Answer image" title="Ảnh đáp án: ${img}" onclick="showImagePreview('${img}')" style="cursor: pointer;">`
+        ).join('')}
             </div>
         `;
 
@@ -1166,7 +1185,7 @@ function editQuestion(questionIndex) {
             const question = questions.find(q => q.index === questionIndex);
             if (question) {
                 editingQuestion = { ...question };
-                
+
                 // Fill form with current data
                 document.getElementById('editSubject').value = question.subject || '';
                 document.getElementById('editChapter').value = question.chapter || '';
@@ -1174,7 +1193,8 @@ function editQuestion(questionIndex) {
                 document.getElementById('editQuestion').value = question.question || '';
                 document.getElementById('editAnswer').value = question.answer || '';
                 document.getElementById('editDifficulty').value = question.difficulty || 'easy';
-                
+                document.getElementById('editPageNumber').value = question.page_number || '';
+
                 // Try to detect folder from image paths
                 const editFolderSelect = document.getElementById('editFolderSelect');
                 if (question.image_question && question.image_question.length > 0) {
@@ -1191,7 +1211,7 @@ function editQuestion(questionIndex) {
                     editFolderSelect.value = '';
                     loadImagesFromFolderForEdit('');
                 }
-                
+
                 // Show modal
                 document.getElementById('editModal').style.display = 'block';
             }
@@ -1204,7 +1224,7 @@ function editQuestion(questionIndex) {
 
 function handleEditQuestion(event) {
     event.preventDefault();
-    
+
     const formData = new FormData(event.target);
     const questionData = {
         subject: formData.get('subject'),
@@ -1213,6 +1233,7 @@ function handleEditQuestion(event) {
         question: formData.get('question'),
         answer: formData.get('answer'),
         difficulty: formData.get('difficulty'),
+        page_number: parseInt(formData.get('page_number')) || 0,
         image_question: editingQuestion.image_question || [],
         image_answer: editingQuestion.image_answer || [],
         book: currentBook
@@ -1225,22 +1246,22 @@ function handleEditQuestion(event) {
         },
         body: JSON.stringify(questionData)
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Cập nhật câu hỏi thành công!', 'success');
-            closeEditModal();
-            loadQuestions();
-            // Refresh JSON viewer
-            loadJsonContent();
-        } else {
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Cập nhật câu hỏi thành công!', 'success');
+                closeEditModal();
+                loadQuestions();
+                // Refresh JSON viewer
+                loadJsonContent();
+            } else {
+                showAlert('Lỗi khi cập nhật câu hỏi', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
             showAlert('Lỗi khi cập nhật câu hỏi', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Lỗi khi cập nhật câu hỏi', 'error');
-    });
+        });
 }
 
 function deleteQuestion(questionIndex) {
@@ -1248,21 +1269,21 @@ function deleteQuestion(questionIndex) {
         fetch(`/api/questions/${questionIndex}?book=${currentBook}`, {
             method: 'DELETE'
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showAlert('Xóa câu hỏi thành công!', 'success');
-                loadQuestions();
-                // Refresh JSON viewer
-                loadJsonContent();
-            } else {
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Xóa câu hỏi thành công!', 'success');
+                    loadQuestions();
+                    // Refresh JSON viewer
+                    loadJsonContent();
+                } else {
+                    showAlert('Lỗi khi xóa câu hỏi', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
                 showAlert('Lỗi khi xóa câu hỏi', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('Lỗi khi xóa câu hỏi', 'error');
-        });
+            });
     }
 }
 
@@ -1276,10 +1297,10 @@ function showAlert(message, type) {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type}`;
     alertDiv.textContent = message;
-    
+
     alertContainer.innerHTML = '';
     alertContainer.appendChild(alertDiv);
-    
+
     // Auto remove alert after 3 seconds
     setTimeout(() => {
         alertDiv.remove();
@@ -1315,7 +1336,7 @@ function loadJsonContent() {
 function saveJsonContent() {
     const editor = document.getElementById('jsonEditor');
     const content = editor.value;
-    
+
     // Validate before saving
     try {
         JSON.parse(content);
@@ -1324,7 +1345,7 @@ function saveJsonContent() {
         editor.classList.add('error');
         return;
     }
-    
+
     fetch('/api/json/raw', {
         method: 'POST',
         headers: {
@@ -1332,32 +1353,32 @@ function saveJsonContent() {
         },
         body: JSON.stringify({ content: content, book: currentBook })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert(data.message, 'success');
-            editor.classList.remove('error');
-            editor.classList.add('success');
-            // Reload questions list to reflect changes
-            setTimeout(() => {
-                loadQuestions();
-            }, 500);
-        } else {
-            showAlert('Lỗi khi lưu JSON: ' + data.error, 'error');
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert(data.message, 'success');
+                editor.classList.remove('error');
+                editor.classList.add('success');
+                // Reload questions list to reflect changes
+                setTimeout(() => {
+                    loadQuestions();
+                }, 500);
+            } else {
+                showAlert('Lỗi khi lưu JSON: ' + data.error, 'error');
+                editor.classList.add('error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Lỗi khi lưu JSON', 'error');
             editor.classList.add('error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Lỗi khi lưu JSON', 'error');
-        editor.classList.add('error');
-    });
+        });
 }
 
 function formatJson() {
     const editor = document.getElementById('jsonEditor');
     const content = editor.value;
-    
+
     try {
         const parsed = JSON.parse(content);
         const formatted = JSON.stringify(parsed, null, 2);
@@ -1374,7 +1395,7 @@ function formatJson() {
 function validateJson() {
     const editor = document.getElementById('jsonEditor');
     const content = editor.value;
-    
+
     try {
         const parsed = JSON.parse(content);
         const questionsCount = Array.isArray(parsed) ? parsed.length : 0;
@@ -1392,10 +1413,10 @@ function showImagePreview(imagePath) {
     const modal = document.getElementById('imagePreviewModal');
     const previewImage = document.getElementById('previewImage');
     const imagePathElement = document.getElementById('imagePath');
-    
+
     previewImage.src = `/images/${currentBook}/${imagePath}`;
     imagePathElement.textContent = `Đường dẫn: ${currentBook}/${imagePath}`;
-    
+
     modal.style.display = 'block';
 }
 
@@ -1411,13 +1432,13 @@ let isEditingText = false;
 
 function loadTextFromFolder(folderName) {
     currentTextFolder = folderName;
-    
+
     fetch(`/api/text/${folderName}?book=${currentBook}`)
         .then(response => response.json())
         .then(data => {
             const textGroup = document.getElementById('textContentGroup');
             const textDisplay = document.getElementById('textDisplay');
-            
+
             if (data.success && data.content.trim()) {
                 currentTextContent = data.content;
                 textDisplay.textContent = data.content;
@@ -1446,64 +1467,64 @@ function hideTextContent() {
 
 function startTextEditing() {
     if (!currentTextFolder) return;
-    
+
     isEditingText = true;
     const textDisplay = document.getElementById('textDisplay');
     const textEditor = document.getElementById('textEditor');
     const editBtn = document.getElementById('editTextBtn');
     const saveBtn = document.getElementById('saveTextBtn');
     const cancelBtn = document.getElementById('cancelTextBtn');
-    
+
     textEditor.value = currentTextContent;
     textDisplay.style.display = 'none';
     textEditor.style.display = 'block';
     editBtn.style.display = 'none';
     saveBtn.style.display = 'inline-block';
     cancelBtn.style.display = 'inline-block';
-    
+
     textEditor.focus();
 }
 
 function saveTextContent() {
     if (!currentTextFolder) return;
-    
+
     const textEditor = document.getElementById('textEditor');
     const newContent = textEditor.value;
-    
+
     fetch(`/api/text/${currentTextFolder}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ 
-            content: newContent, 
-            book: currentBook 
+        body: JSON.stringify({
+            content: newContent,
+            book: currentBook
         })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            currentTextContent = newContent;
-            const textDisplay = document.getElementById('textDisplay');
-            
-            if (newContent.trim()) {
-                textDisplay.textContent = newContent;
-                textDisplay.classList.remove('empty');
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentTextContent = newContent;
+                const textDisplay = document.getElementById('textDisplay');
+
+                if (newContent.trim()) {
+                    textDisplay.textContent = newContent;
+                    textDisplay.classList.remove('empty');
+                } else {
+                    textDisplay.textContent = 'File text.txt trống';
+                    textDisplay.classList.add('empty');
+                }
+
+                cancelTextEditing();
+                showAlert('Lưu nội dung text thành công!', 'success');
             } else {
-                textDisplay.textContent = 'File text.txt trống';
-                textDisplay.classList.add('empty');
+                showAlert('Lỗi khi lưu text: ' + data.error, 'error');
             }
-            
-            cancelTextEditing();
-            showAlert('Lưu nội dung text thành công!', 'success');
-        } else {
-            showAlert('Lỗi khi lưu text: ' + data.error, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error saving text:', error);
-        showAlert('Lỗi khi lưu nội dung text', 'error');
-    });
+        })
+        .catch(error => {
+            console.error('Error saving text:', error);
+            showAlert('Lỗi khi lưu nội dung text', 'error');
+        });
 }
 
 function cancelTextEditing() {
@@ -1513,7 +1534,7 @@ function cancelTextEditing() {
     const editBtn = document.getElementById('editTextBtn');
     const saveBtn = document.getElementById('saveTextBtn');
     const cancelBtn = document.getElementById('cancelTextBtn');
-    
+
     textDisplay.style.display = 'block';
     textEditor.style.display = 'none';
     editBtn.style.display = 'inline-block';
@@ -1527,7 +1548,7 @@ function loadTextFromFolderModal(folderName) {
         .then(data => {
             const textGroup = document.getElementById('editTextContentGroup');
             const textDisplay = document.getElementById('editTextDisplay');
-            
+
             if (data.success && data.content.trim()) {
                 textDisplay.textContent = data.content;
                 textDisplay.classList.remove('empty');

@@ -624,6 +624,7 @@ def add_question():
             'chapter': data.get('chapter', ''),
             'subject': data.get('subject', ''),
             'lesson': data.get('lesson', ''),
+            'page_number': data.get('page_number', 0),
             'book': book_name.removeprefix("books_cropped/")
         }
         
@@ -657,6 +658,7 @@ def update_question(question_id):
                     'chapter': data.get('chapter', q.get('chapter', '')),
                     'subject': data.get('subject', q.get('subject', '')),
                     'lesson': data.get('lesson', q.get('lesson', '')),
+                    'page_number': data.get('page_number', q.get('page_number', 0)),
                     'book': book_name.removeprefix("books_cropped/")
                 })
                 save_questions(questions, book_name)

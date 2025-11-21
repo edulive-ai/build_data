@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
@@ -25,8 +27,10 @@
                     </div>
                     <button id="logoutBtn" class="logout-btn-header" style="display: none;">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/>
-                            <path d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/>
+                            <path
+                                d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z" />
+                            <path
+                                d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z" />
                         </svg>
                         Đăng xuất
                     </button>
@@ -49,7 +53,7 @@
             <!-- Form Section -->
             <div class="form-section">
                 <div class="section-title">📝 Thêm Câu Hỏi Mới</div>
-                
+
                 <!-- Book Selection -->
                 <div class="form-group">
                     <label for="bookSelect">📚 Chọn sách:</label>
@@ -59,18 +63,25 @@
                 </div>
 
                 <!-- Folder Selection -->
-                <div class="form-group">
+                <div class="form-group form-group-inline">
                     <label for="folderSelect">📁 Chọn folder ảnh:</label>
-                    <select id="folderSelect" class="folder-select" onchange="loadImagesFromFolder()">
-                        <option value="">-- Chọn folder ảnh --</option>
-                    </select>
+                    <div class="inline-control">
+                        <select id="folderSelect" class="folder-select" onchange="loadImagesFromFolder()">
+                            <option value="">-- Chọn folder ảnh --</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary reload-btn" onclick="reloadFolderAssets()"
+                            title="Tải lại ảnh & text của folder đang chọn">
+                            🔄 Reload
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Quick Actions -->
                 <div class="quick-actions">
                     <div class="quick-actions-title">⚡ Quick Actions cho Images</div>
                     <div class="quick-actions-buttons">
-                        <button onclick="showFullSizeImages()" class="quick-btn" title="Hiển thị ảnh full size để thấy toàn bộ nội dung">
+                        <button onclick="showFullSizeImages()" class="quick-btn"
+                            title="Hiển thị ảnh full size để thấy toàn bộ nội dung">
                             🖼️ Full Size
                         </button>
                         <button onclick="fitAllImages()" class="quick-btn" title="Vừa khít với khung hiển thị">
@@ -79,7 +90,8 @@
                         <button onclick="showCompactImages()" class="quick-btn" title="Hiển thị gọn để xem nhiều ảnh">
                             📱 Compact
                         </button>
-                        <button onclick="setImageViewMode('auto-height')" class="quick-btn" title="Chiều cao tự động theo nội dung ảnh">
+                        <button onclick="setImageViewMode('auto-height')" class="quick-btn"
+                            title="Chiều cao tự động theo nội dung ảnh">
                             📏 Auto Height
                         </button>
                     </div>
@@ -157,10 +169,15 @@
                         </select>
                     </div>
 
+                    <div class="form-group">
+                        <label for="pageNumber">📄 Số trang:</label>
+                        <input type="number" id="pageNumber" name="page_number" placeholder="Ví dụ: 7" min="0">
+                    </div>
+
                     <button type="submit" class="btn btn-primary">➕ Thêm câu hỏi</button>
                 </form>
 
-                
+
             </div>
 
             <!-- Questions List Section -->
@@ -180,15 +197,16 @@
                         <button onclick="validateJson()" class="btn btn-warning">✅ Validate</button>
                     </div>
                 </div>
-                
+
                 <div class="json-stats">
                     <div class="json-stats-text">
                         💡 Chỉnh sửa trực tiếp file JSON mapping. Nhớ validate trước khi lưu!
                     </div>
                 </div>
-                
+
                 <div class="json-editor-container">
-                    <textarea id="jsonEditor" class="json-editor" placeholder="JSON content sẽ hiển thị ở đây..."></textarea>
+                    <textarea id="jsonEditor" class="json-editor"
+                        placeholder="JSON content sẽ hiển thị ở đây..."></textarea>
                 </div>
             </div>
         </div>
@@ -199,12 +217,19 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2>✏️ Chỉnh sửa câu hỏi</h2>
-            
-            <div class="form-group">
+
+            <div class="form-group form-group-inline">
                 <label for="editFolderSelect">📁 Chọn folder ảnh:</label>
-                <select id="editFolderSelect" class="folder-select" onchange="loadImagesFromFolderForEdit(this.value)">
-                    <option value="">-- Chọn folder ảnh --</option>
-                </select>
+                <div class="inline-control">
+                    <select id="editFolderSelect" class="folder-select"
+                        onchange="loadImagesFromFolderForEdit(this.value)">
+                        <option value="">-- Chọn folder ảnh --</option>
+                    </select>
+                    <button type="button" class="btn btn-secondary reload-btn" onclick="reloadFolderAssets(true)"
+                        title="Tải lại ảnh & text cho folder đang chọn">
+                        🔄 Reload
+                    </button>
+                </div>
             </div>
 
             <!-- Quick Actions for Edit Modal -->
@@ -274,6 +299,11 @@
                     </select>
                 </div>
 
+                <div class="form-group">
+                    <label for="editPageNumber">📄 Số trang:</label>
+                    <input type="number" id="editPageNumber" name="page_number" placeholder="Ví dụ: 7" min="0">
+                </div>
+
                 <div class="modal-buttons">
                     <button type="submit" class="btn btn-primary">💾 Cập nhật</button>
                     <button type="button" id="cancelEdit" class="btn btn-secondary">❌ Hủy</button>
@@ -300,7 +330,7 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2>📤 Upload PDF</h2>
-            
+
             <div class="upload-info">
                 <h3>📋 Quy trình xử lý:</h3>
                 <ol>
@@ -326,11 +356,9 @@
 
                 <div class="form-group">
                     <label for="bookName">📚 Tên sách:</label>
-                    <input type="text" id="bookName" name="book_name" 
-                           placeholder="Ví dụ: toan_lop_6" 
-                           pattern="[a-zA-Z0-9_-]+" 
-                           title="Chỉ được sử dụng chữ cái, số, dấu gạch dưới và gạch ngang"
-                           required>
+                    <input type="text" id="bookName" name="book_name" placeholder="Ví dụ: toan_lop_6"
+                        pattern="[a-zA-Z0-9_-]+" title="Chỉ được sử dụng chữ cái, số, dấu gạch dưới và gạch ngang"
+                        required>
                     <small>Chỉ được sử dụng chữ cái, số, dấu gạch dưới (_) và gạch ngang (-)</small>
                 </div>
 
@@ -351,13 +379,13 @@
 
     <!-- Scripts -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-    
+
     <!-- Auto-apply preferences and additional scripts -->
     <script>
         // Auto-apply preferences khi load trang
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Delay để đảm bảo các elements đã được render
-            setTimeout(function() {
+            setTimeout(function () {
                 if (window.currentImageViewMode) {
                     setImageViewMode(window.currentImageViewMode);
                 }
@@ -376,7 +404,7 @@
             event.target.classList.add('active');
 
             // Show relevant content based on tab
-            switch(tabName) {
+            switch (tabName) {
                 case 'mapping':
                     // Already the main view, nothing to change
                     break;
@@ -391,15 +419,15 @@
         }
 
         // Enhanced error handling
-        window.addEventListener('error', function(e) {
+        window.addEventListener('error', function (e) {
             console.error('JavaScript Error:', e.error);
             showAlert('Có lỗi JavaScript xảy ra. Vui lòng refresh trang.', 'error');
         });
 
         // Enhanced image loading
-        document.addEventListener('imagesLoaded', function() {
+        document.addEventListener('imagesLoaded', function () {
             console.log('Images loaded, applying preferences...');
-            
+
             // Apply current view mode to all new images
             setTimeout(() => {
                 if (window.currentImageViewMode) {
@@ -413,11 +441,11 @@
 
         // Performance monitoring
         let imageLoadTimes = [];
-        
+
         function trackImageLoadTime(startTime, imagePath) {
             const loadTime = performance.now() - startTime;
             imageLoadTimes.push({ path: imagePath, time: loadTime });
-            
+
             // Log slow loading images
             if (loadTime > 2000) {
                 console.warn(`Slow image load: ${imagePath} took ${loadTime.toFixed(2)}ms`);
@@ -425,7 +453,7 @@
         }
 
         // Auto-save preferences
-        setInterval(function() {
+        setInterval(function () {
             if (window.currentImageViewMode && window.currentImageGridSize) {
                 localStorage.setItem('imageViewMode', window.currentImageViewMode);
                 localStorage.setItem('imageGridSize', window.currentImageGridSize);
@@ -434,12 +462,12 @@
 
         // Debug mode toggle
         let debugMode = localStorage.getItem('debugMode') === 'true';
-        
-        document.addEventListener('keydown', function(e) {
+
+        document.addEventListener('keydown', function (e) {
             if (e.ctrlKey && e.shiftKey && e.key === 'D') {
                 debugMode = !debugMode;
                 localStorage.setItem('debugMode', debugMode);
-                
+
                 if (debugMode) {
                     showAlert('Debug mode ON - Chi tiết log sẽ hiển thị trong console', 'success');
                     console.log('Debug info:', {
@@ -457,4 +485,5 @@
         });
     </script>
 </body>
+
 </html>

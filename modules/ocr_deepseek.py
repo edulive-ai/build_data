@@ -26,7 +26,7 @@ class OCRProcessor:
     # DeepSeek API Configuration
     DEEPSEEK_API_ENDPOINT = "https://ark.ap-southeast.bytepluses.com/api/v3/chat/completions"
     DEEPSEEK_MODEL_NAME = "skylark-vision-250515"
-    DEEPSEEK_API_KEY = os.getenv("DEEPSEAK_API_KEY")
+    DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
     
     # Retry Configuration
     MAX_RETRY_ATTEMPTS = 3
@@ -36,7 +36,7 @@ class OCRProcessor:
         self.api_key = self.DEEPSEEK_API_KEY
         
         if not self.api_key:
-            raise ValueError("DEEPSEAK_API_KEY không được tìm thấy trong biến môi trường")
+            raise ValueError("DEEPSEEK_API_KEY không được tìm thấy trong biến môi trường")
     
     def _update_status(self, callback: Optional[Callable], **kwargs) -> None:
         """Helper method để update status qua callback"""

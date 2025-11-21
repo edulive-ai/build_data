@@ -20,7 +20,7 @@ class OCRService:
         self.config = config
         self.headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {config.DEEPSEAK_API_KEY}"
+            "Authorization": f"Bearer {config.DEEPSEEK_API_KEY}"
         }
     
     def _make_api_call(self, image_base64_url: str, prompt: str) -> Optional[str]:
@@ -35,7 +35,7 @@ class OCRService:
             Extracted text or None if failed
         """
         payload = {
-            "model": self.config.DEEPSEAK_MODEL,
+            "model": self.config.DEEPSEEK_MODEL,
             "messages": [
                 {
                     "role": "user",
@@ -55,7 +55,7 @@ class OCRService:
         
         try:
             response = requests.post(
-                self.config.DEEPSEAK_API_ENDPOINT,
+                self.config.DEEPSEEK_API_ENDPOINT,
                 headers=self.headers,
                 data=json.dumps(payload),
                 timeout=30

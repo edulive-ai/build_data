@@ -219,6 +219,22 @@ body {
     margin-bottom: 15px;
 }
 
+.form-group-inline .inline-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-group-inline .inline-control select {
+    flex: 1;
+}
+
+.inline-control .reload-btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-height: 42px;
+}
+
 .form-group label {
     display: block;
     margin-bottom: 5px;

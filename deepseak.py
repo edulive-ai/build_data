@@ -8,7 +8,7 @@ load_dotenv()
 
 # --- Cấu hình API ---
 API_ENDPOINT = "https://ark.ap-southeast.bytepluses.com/api/v3/chat/completions"
-API_KEY = os.getenv("DEEPSEAK_API_KEY")  # **THAY THẾ BẰNG API KEY THỰC CỦA BẠN**
+API_KEY = os.getenv("DEEPSEEK_API_KEY")  # **THAY THẾ BẰNG API KEY THỰC CỦA BẠN**
 MODEL_NAME = "skylark-vision-250515"
 
 # --- Cấu hình ảnh ---

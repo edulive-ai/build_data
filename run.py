@@ -614,7 +614,7 @@ def main():
             sys.exit(1)
     
     except KeyboardInterrupt:
-        print("\n⚠️ Processing interrupted by user")
+        print("\n⚠️  Processing interrupted by user")
         sys.exit(1)
     except Exception as e:
         print(f"❌ Critical error: {e}")
