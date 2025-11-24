@@ -31,15 +31,25 @@ class Config:
     
     # OCR Settings
     OCR_BATCH_SIZE = 5
-    OCR_PROMPT = (
-        "You are a Vietnamese OCR expert. Please extract the entire text from the following image accurately."
-        "Requirements:"
-        "1. Extract the text from the following image exactly as it appears. "
-        "2. Do not add, remove, or modify any words or characters. "
-        "3. Preserve the original language and formatting of the text in the image."
-        "4. If no text is found, return exactly three dots: .."
-        "5. If there are numbers or mathematical formulas, keep them as they are"
-    )
+    OCR_PROMPT = """
+    You are a OCR expert. Carefully extract all text from the provided image with perfect accuracy.
+
+    Requirements:
+
+    Extract the text exactly as it appears in the image, including every word, punctuation mark, symbol, and line break.
+
+    Do not add, remove, rewrite, correct, infer, or modify any characters or words.
+
+    Preserve the original language, layout, formatting, line structure, and spacing exactly as shown in the image.
+
+    If the image contains no text, return exactly three dots: ...
+
+    If the image contains numbers, symbols, or mathematical expressions, keep them exactly as they appear, without alteration.
+
+    Do not translate, interpret meaning, or fix grammar/spelling — only extract the raw text.
+
+    Output the result as plain text only, without markdown, comments, or explanations.
+    """
     
     # Question Classification
     QUESTION_PROMPT = """

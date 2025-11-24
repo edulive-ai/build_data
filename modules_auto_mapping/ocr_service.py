@@ -3,6 +3,7 @@ import json
 import time
 import logging
 from typing import List, Dict, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from .utils import ImageUtils
 
 logger = logging.getLogger(__name__)
@@ -111,9 +112,40 @@ class OCRService:
             logger.error(f"OCR error for {image_path}: {e}")
             return None
     
+    def _process_single_box_ocr(self, box: Dict, image_path: str) -> tuple:
+        """
+        Process OCR for a single box (helper for concurrent processing)
+        
+        Args:
+            box: Box dictionary with 'id', 'cls', 'bbox'
+            image_path: Path to source image
+            
+        Returns:
+            (box_id, ocr_text, crop_path, success)
+        """
+        try:
+            # Crop bbox
+            crop_path = ImageUtils.crop_bbox(
+                image_path, 
+                box["bbox"], 
+                f"temp_crop_{box['id']}.png"
+            )
+            
+            # OCR cropped image
+            ocr_text = self.ocr_with_retry(crop_path)
+            
+            success = ocr_text is not None
+            logger.info(f"   Box {box['id']} (cls{box['cls']}): OCR {'success' if success else 'failed'}")
+            
+            return (box['id'], ocr_text, crop_path, True)
+            
+        except Exception as e:
+            logger.error(f"Error processing OCR box {box['id']}: {e}")
+            return (box['id'], None, None, False)
+    
     def process_boxes_batch(self, image_path: str, boxes: List[Dict]) -> List[Dict]:
         """
-        Process multiple boxes - OCR only for OCR_CLASSES
+        Process multiple boxes with concurrent OCR processing
         
         Args:
             image_path: Path to source image
@@ -125,43 +157,51 @@ class OCRService:
         try:
             # Filter boxes that need OCR
             ocr_boxes = [box for box in boxes if box['cls'] in self.config.OCR_CLASSES]
+            non_ocr_boxes = [box for box in boxes if box['cls'] not in self.config.OCR_CLASSES]
             
             logger.info(f"Processing {len(ocr_boxes)} OCR boxes (classes {self.config.OCR_CLASSES})")
+            logger.info(f"Using concurrent processing with batch size: {self.config.OCR_BATCH_SIZE}")
             
+            # Create result dictionary to maintain order
+            updated_boxes_dict = {box['id']: box.copy() for box in boxes}
             temp_files = []
-            updated_boxes = []
             
-            for box in boxes:
-                updated_box = box.copy()
-                
-                if box['cls'] in self.config.OCR_CLASSES:
-                    # Process OCR for this box
-                    try:
-                        # Crop bbox
-                        crop_path = ImageUtils.crop_bbox(
-                            image_path, 
-                            box["bbox"], 
-                            f"temp_crop_{box['id']}.png"
-                        )
-                        temp_files.append(crop_path)
-                        
-                        # OCR cropped image
-                        ocr_text = self.ocr_with_retry(crop_path)
-                        updated_box["ocr_text"] = ocr_text
-                        
-                        logger.info(f"   Box {box['id']} (cls{box['cls']}): OCR {'success' if ocr_text else 'failed'}")
-                        
-                        # Add delay between requests
-                        time.sleep(0.5)
-                        
-                    except Exception as e:
-                        logger.error(f"Error processing OCR box {box['id']}: {e}")
-                        updated_box["ocr_text"] = None
-                else:
-                    # Non-OCR class, skip OCR
-                    updated_box["ocr_text"] = None
-                
-                updated_boxes.append(updated_box)
+            # Process OCR boxes concurrently
+            if ocr_boxes:
+                with ThreadPoolExecutor(max_workers=self.config.OCR_BATCH_SIZE) as executor:
+                    # Submit all OCR tasks
+                    future_to_box = {
+                        executor.submit(self._process_single_box_ocr, box, image_path): box
+                        for box in ocr_boxes
+                    }
+                    
+                    # Process completed tasks
+                    completed = 0
+                    for future in as_completed(future_to_box):
+                        box = future_to_box[future]
+                        try:
+                            box_id, ocr_text, crop_path, success = future.result()
+                            
+                            # Update box with OCR result
+                            updated_boxes_dict[box_id]["ocr_text"] = ocr_text
+                            
+                            if crop_path:
+                                temp_files.append(crop_path)
+                            
+                            completed += 1
+                            if completed % 5 == 0 or completed == len(ocr_boxes):
+                                logger.debug(f"Progress: {completed}/{len(ocr_boxes)} boxes processed")
+                            
+                        except Exception as e:
+                            logger.error(f"Error getting result for box {box['id']}: {e}")
+                            updated_boxes_dict[box['id']]["ocr_text"] = None
+            
+            # Set OCR text to None for non-OCR boxes
+            for box in non_ocr_boxes:
+                updated_boxes_dict[box['id']]["ocr_text"] = None
+            
+            # Convert back to list maintaining original order
+            updated_boxes = [updated_boxes_dict[box['id']] for box in boxes]
             
             # Cleanup temp files
             ImageUtils.cleanup_temp_files(temp_files)
